@@ -7,7 +7,9 @@ the crawler, the gate, the embed client, and the retriever all read from one ``C
 
 from __future__ import annotations
 
+import hashlib
 import os
+import re
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 
@@ -117,3 +119,47 @@ class Config:
     def with_output_dir(self, output_dir: "os.PathLike[str] | str") -> "Config":
         """Return a new Config with ``output_dir`` bound (frozen dataclass => copy)."""
         return replace(self, output_dir=Path(output_dir))
+
+
+def sanitize_title(title: str) -> str:
+    """Sanitizes a page title for a filesystem-safe archive name.
+
+    A short SHA-256 digest of the *full* original title is appended to the
+    truncated, cleaned prefix. This keeps names readable and bounded while
+    guaranteeing that two genuinely different long titles never collapse onto
+    the same archive filename (which would let one run silently overwrite the
+    other's archive). Faithful port of ``pipeline_orchestrator.py::sanitize_title``.
+    """
+    safe = re.sub(r"[^a-zA-Z0-9\s]", "", title.lower())
+    safe = re.sub(r"\s+", "_", safe)
+    digest = hashlib.sha256(title.encode("utf-8")).hexdigest()[:8]
+    return f"{safe[:100]}_{digest}"
+
+
+@dataclass
+class PipelineConfig:
+    """Execution-time configuration for running the full funnel against an output dir.
+
+    Holds the parameters that describe *how* to run a pipeline — the seed page, the
+    gating prompt file, the output root, and the wall-clock cap — as opposed to the
+    per-tunable :class:`Config`, which describes *what* values the library modules use.
+    Mirrors the old orchestrator's ``PipelineConfig``; ``state_file`` and
+    ``archive_name`` are derived, like the reference.
+    """
+
+    start_page: str
+    prompt_path: Path
+    output_dir: Path
+    dry_run: bool = False
+    # Optional 6th phase (embed/DB build) is enabled by default but toggleable.
+    ingest: bool = True
+    # 6h wall-clock cap on the whole run, mirroring the old orchestrator's per-command
+    # timeout — a stalled run must not freeze the program indefinitely.
+    timeout: float = 6 * 60 * 60
+
+    state_file: Path = field(init=False)
+    archive_name: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        self.state_file = self.output_dir / "pipeline_state.json"
+        self.archive_name = f"knowledge_{sanitize_title(self.start_page)}.tgz"
