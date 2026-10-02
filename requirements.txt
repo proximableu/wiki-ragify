@@ -1,0 +1,31 @@
+# Wiki Ragify v2 runtime dependencies.
+# Matches the stack the reference scripts (code_description.md) already used, plus
+# Textual for the new TUI.
+
+# Core HTTP + env
+requests
+python-dotenv
+
+# Ollama client + structured-output schema enforcement
+ollama
+pydantic
+
+# Textual TUI
+textual
+
+# Wikipedia crawler text processing
+nltk
+
+# Duplicate detection (MinHash / MinHashLSH)
+datasketch
+
+# Optional, but recommended — enables token-accurate chunking in the splitter.
+# If omitted, wiki_splitter falls back to char-based chunking (the old behaviour).
+tiktoken
+
+# SQLite vector store backend
+sqlite-vec
+
+# Shared numerics + progress bars
+numpy
+tqdm
