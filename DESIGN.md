@@ -384,7 +384,11 @@ Same keys as `.env.example`; the new `Config` reads them once. New tunables we m
             subprocess-oriented tests that no longer apply).  Full suite passes (45 passed)
             once the runtime deps (requests/pydantic/ollama/…) are installed; two
             `save_prompt` path assertions were corrected to the shared `prompts/` dir.
-- [ ] **4.3** Manual end-to-end smoke run with real Ollama on one seed page.
+- [x] **4.3** Manual end-to-end smoke run with real Ollama on one seed page.
+            Full funnel (seed→list→split→gate→archive→ingest) completed live:
+            31 accepted / 1231 rejected, 109 docs embedded into a 4.48 MB sqlite-vec
+            DB; `sqlite-vec` + `datasketch` were the two runtime deps still missing
+            from the test venv and have been installed.
 - [x] **4.4** `__main__.py` (`python -m wiki_ragify`) + README.
 
 ---
