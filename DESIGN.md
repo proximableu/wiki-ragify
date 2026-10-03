@@ -394,3 +394,19 @@ Same keys as `.env.example`; the new `Config` reads them once. New tunables we m
 - You **pause** mid-crawl, quit; relaunch, and **resume** from the same checkpoint.
 - The query box retrieves from the finished store.
 - Full pytest suite passes; config is 100% in `.env`.
+
+## 11. Future / Change Requests
+
+- **LLM-generated gating prompt from a topic.** ✅ DONE. `wiki_ragify/gating/prompt_gen.py`
+  renders `example/make_a_topic_gate.txt` (with `{{target_topic | textarea}}` and
+  `{{exclude | textarea}}` placeholders) and drives the *same gate model* the crawler uses
+  to emit a topic-specific `gating_prompt.txt`. The rendered prompt is written under
+  `output/prompts/` next to a small manifest recording the seeds used, so a run is traceable
+  back to its prompt. `example/make_gate_prompt.py` is the thin CLI wrapper — a **pre-run
+  step, not part of the crawler**: it writes a prompt you then point
+  `smoke_run.py --prompt ...` (or the TUI) at. Iterative refinement is built in — with
+  `--refine`, the prompt from the previous pass is picked up automatically and fed back with
+  the instruction. The generation call uses plain text (no `GatingResponse` JSON schema) with
+  the gate's temperature/`num_ctx`/timeout, and can raise `num_ctx` to fit the larger
+  template. The prompt-authoring turn stays human-led (a topic seeds it) while letting a
+  topic produce it.
