@@ -1,0 +1,200 @@
+/* Wiki Ragify TUI — layout + palette for the full-screen multi-screen app.
+ *
+ * Three regions: the left folder picker (FR-1), the central progress window
+ * (FR-3), and the right stats panel (FR-4). A footer carries the query box (FR-8)
+ * and the run controls (RUN / PAUSE / STOP, §7 pause/resume model).
+ *
+ * Colors are chosen for a dark terminal with high contrast. The accept/reject/skip
+ * decisions from the two LLM gates map onto accent2 / error / subtle so the log
+ * stays readable without any hardcoding of the palette in the widget code.
+ *
+ * Note: the progress/stats panels are RichLog widgets (not Tables), so styling
+ * targets their rows via the LogRow styles (see eventlog.py); the run-controls and
+ * query box are plain widgets in a Container(id="footer").
+ */
+
+Screen {
+    layout: vertical;
+    background: $surface;
+    color: $text;
+}
+
+/* --- Top bar: run-status indicator ------------------------------------------ */
+
+#status-indicator {
+    dock: left;
+    height: 1;
+    padding: 0 1;
+    background: $warning;
+    color: $on-warning;
+    text-style: bold;
+}
+
+#status-indicator.running {
+    background: $success;
+    color: $on-success;
+}
+
+#status-indicator.paused {
+    background: $warning;
+    color: $on-warning;
+}
+
+#status-indicator.stopped {
+    background: $error;
+    color: $on-error;
+}
+
+#status-indicator.idle {
+    background: $primary;
+    color: $on-primary;
+}
+
+/* --- Main region: folder tree | progress | stats -------------------------- */
+
+#main {
+    layout: horizontal;
+    height: 1fr;
+}
+
+#folder-tree {
+    width: 30%;
+    border-right: $rounded $panel-border;
+    background: $surface-2;
+}
+
+#progress-panel {
+    width: 50%;
+    border-right: $rounded $panel-border;
+    background: $surface;
+}
+
+#progress-panel .row-accept { color: $accent2; }
+#progress-panel .row-reject { color: $error; }
+#progress-panel .row-skip   { color: $subtle; }
+#progress-panel .row-info   { color: $primary; }
+#progress-panel .row-warn   { color: $warning; }
+#progress-panel .row-tick   { color: $subtle; }
+#progress-panel .row-stage-done { color: $success; }
+
+#stats-panel {
+    width: 20%;
+    background: $surface-2;
+}
+
+/* --- Footer: query box + run controls ------------------------------------- */
+
+#footer {
+    dock: bottom;
+    height: 3;
+    layout: horizontal;
+    border-top: $rounded $panel-border;
+    background: $surface-2;
+    padding: 0 1;
+}
+
+#query-input {
+    dock: left;
+    width: 60%;
+}
+
+#query-input Input {
+    background: $surface;
+    color: $text;
+    placeholder-color: $subtle;
+}
+
+#run-controls {
+    dock: right;
+    align-vertical: middle;
+}
+
+#run-controls Button {
+    margin: 0 1;
+}
+
+#run-controls #run-button {
+    background: $success;
+    color: $on-success;
+}
+
+#run-controls #pause-button {
+    background: $warning;
+    color: $on-warning;
+}
+
+#run-controls #stop-button {
+    background: $error;
+    color: $on-error;
+}
+
+/* --- Query results overlay ------------------------------------------------ */
+
+#query-overlay {
+    width: 70%;
+    height: 70%;
+    dock: top;
+    center-vertical: true;
+    border: $rounded $accent;
+    background: $surface;
+    color: $text;
+}
+
+#query-overlay #query-message {
+    padding: 0 1;
+}
+
+#query-overlay #query-table {
+    padding: 1 0;
+}
+
+#query-overlay #query-back-actions {
+    dock: bottom;
+    height: 3;
+    align-horizontal: center;
+}
+
+#query-overlay #query-back {
+    background: $accent;
+    color: $on-accent;
+}
+
+/* --- Config modal (start page + prompt entry) ----------------------------- */
+
+#config-screen {
+    width: 60%;
+    height: auto;
+    dock: top;
+    center-vertical: true;
+    border: $rounded $accent;
+    background: $surface-2;
+    color: $text;
+    padding: 1 2;
+}
+
+#config-screen #config-title {
+    text-style: bold;
+    padding-bottom: 1;
+}
+
+#config-screen #config-actions {
+    dock: bottom;
+    height: 3;
+    align-horizontal: center;
+}
+
+#config-screen #confirm {
+    background: $success;
+    color: $on-success;
+}
+
+#config-screen #cancel {
+    background: $error;
+    color: $on-error;
+}
+
+#config-screen Input {
+    background: $surface;
+    color: $text;
+    placeholder-color: $subtle;
+}

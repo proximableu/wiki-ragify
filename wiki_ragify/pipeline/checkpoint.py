@@ -38,6 +38,16 @@ _LEGACY_PHASE_MAP = {
     "archive": PHASE_5_ARCHIVE,
 }
 
+# All six pipeline phases, in execution order (including the optional ingest phase).
+ALL_PHASES = (
+    PHASE_1_SEED,
+    PHASE_2_LIST,
+    PHASE_3_SPLIT,
+    PHASE_4_GATE,
+    PHASE_5_ARCHIVE,
+    PHASE_6_INGEST,
+)
+
 
 class State:
     """Loads, normalizes, persists, and queries the pipeline checkpoint."""
@@ -102,3 +112,16 @@ class State:
     def mark_phase_complete(self, phase: str) -> None:
         self.state[phase] = "completed"
         self.save()
+
+
+def phase_progress(state: "State") -> tuple[int, int]:
+    """Return ``(completed, total)`` phase counts for a checkpoint :class:`State`.
+
+    Pure helper shared by the progress panel and the app: maps the persisted
+    per-phase statuses onto the :data:`ALL_PHASES` pipeline phases. Only a status
+    of ``"completed"`` counts; ``"pending"`` / ``"failed"`` / missing all count as
+    not-done — the safe default.
+    """
+    total = len(ALL_PHASES)
+    done = sum(1 for phase in ALL_PHASES if state.is_phase_complete(phase))
+    return done, total
