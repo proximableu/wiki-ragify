@@ -15,6 +15,13 @@ The app never calls ``os.system`` or spawns subprocesses — the funnel is a pur
 call. The run-controls state machine (idle/running/paused/stopped) is small and deliberate so
 it can be reasoned about off-screen.
 
+Signal handling (DESIGN §4.1 / FR-6): a signal can only be caught on the main thread, and
+the runner lives on a worker thread, so the handler lives here. On SIGINT/SIGTERM the app
+posts an internal :class:`Quit` message and :meth:`on_quit` runs the same graceful stop the
+STOP button uses — the runner sets its stop event, finishes the current phase, persists the
+checkpoint at that durable boundary, and its worker exits. The checkpoint is therefore
+always up to date before the process leaves, matching the old orchestrator's behaviour.
+
 Textual 8.2.8 note: there is no built-in prompt dialog (``Prompt`` arrived in Textual 1.0),
 so the start-page / prompt entry is a small custom modal screen (:class:`ConfigScreen`) that
 posts a :class:`ConfigResult` / :class:`ConfigCancelled` message and lets the app decide what
@@ -24,6 +31,7 @@ to do with the confirmation. All button handlers are keyed off the widget ``id``
 
 from __future__ import annotations
 
+import signal
 from pathlib import Path
 from typing import Optional
 
@@ -56,6 +64,10 @@ class ConfigResult(Message):
 
 class ConfigCancelled(Message):
     """Posted when the config modal is dismissed without confirmation (Esc / Cancel)."""
+
+
+class Quit(Message):
+    """Internal signal: run's signal handler posts this so the graceful stop can happen."""
 
 
 class ConfigScreen(Screen):
@@ -171,6 +183,33 @@ class WikiRagifyApp(App):
         self._selected: Optional[ProjectInfo] = None
         # idle | running | paused | stopped
         self._run_state = "idle"
+
+    def install_signal_handlers(self) -> None:
+        """Register SIGINT/SIGTERM handlers that trigger a graceful stop + exit.
+
+        Registered from ``on_mount`` (the guaranteed main thread): signals can only be caught
+        there, and the runner lives on a worker thread, so we never catch a signal in-process
+        on that thread.
+        """
+        for _sig in (signal.SIGINT, signal.SIGTERM):
+            signal.signal(_sig, self._on_signal)
+
+    def _on_signal(self, signum, _frame) -> None:  # pragma: no cover - main-thread only
+        # Run in the app message loop, never in the signal frame.
+        self.post_message(Quit())
+
+    def on_mount(self) -> None:
+        self.install_signal_handlers()
+
+    def on_quit(self) -> None:
+        """Handle a graceful stop: STOP the runner so it checkpoints, then leave the app.
+
+        Mirrors the STOP button (``stop_run``): the runner sets its stop event, finishes the
+        current phase, persists the checkpoint at that durable boundary, and its worker exits.
+        Then the app exits. If no run is active, just exit.
+        """
+        self.stop_run()
+        self.exit()
 
     # --- event fan-out (called by PipelineRunner on the worker thread) ---------
 
