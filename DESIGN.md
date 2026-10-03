@@ -366,22 +366,22 @@ Same keys as `.env.example`; the new `Config` reads them once. New tunables we m
             real Ollama or network).
 
 ### Phase 3 — Textual UI
-- [ ] **3.1** `ui/app.py` scaffold — app shell, screens, comms layer to `PipelineRunner`
-            (workers, event subscription).
-- [ ] **3.2** `ui/widgets/folder_tree.py` — browseable output/ tree; on select, load project
+- [x] **3.1** `ui/app.py` scaffold — app shell, screens, comms layer to `PipelineRunner`
+            (workers, event subscription).  *(committed; headless mount + nav test passes)*
+- [x] **3.2** `ui/widgets/folder_tree.py` — browseable output/ tree; on select, load project
             checkpoint.
-- [ ] **3.3** `ui/widgets/progress_panel.py` — per-stage bar + live decision log.
-- [ ] **3.4** `ui/widgets/stats_panel.py` — rolling metrics, throttled repaint.
-- [ ] **3.5** `ui/widgets/query_box.py` — query → results overlay.
-- [ ] **3.6** `ui/styles.tcss` — layout + colour palette; header status + pause/stop controls.
-- [ ] **3.7** Wire config dialog + resume-from-checkpoint flow into the app.
+- [x] **3.3** `ui/widgets/progress_panel.py` — per-stage bar + live decision log.
+- [x] **3.4** `ui/widgets/stats_panel.py` — rolling metrics, throttled repaint.
+- [x] **3.5** `ui/widgets/query_box.py` — query → results overlay.
+- [x] **3.6** `ui/styles.tcss` — layout + colour palette; header status + pause/stop controls.
+- [x] **3.7** Wire config dialog + resume-from-checkpoint flow into the app.
 
 ### Phase 4 — Hardening & sign-off
 - [ ] **4.1** Signal handling (SIGINT/SIGTERM) → graceful checkpoint + exit.
 - [ ] **4.2** Full pytest suite (target the ~48-test parity the old docs promised, minus the
             subprocess-oriented tests that no longer apply).
 - [ ] **4.3** Manual end-to-end smoke run with real Ollama on one seed page.
-- [ ] **4.4** `__main__.py` (`python -m wiki_ragify`) + README.
+- [x] **4.4** `__main__.py` (`python -m wiki_ragify`) + README.
 
 ---
 
