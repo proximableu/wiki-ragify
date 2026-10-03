@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 # receives fully-substituted plain text.
 _PLACEHOLDER = re.compile(r"\{\{\s*(target_topic|exclude)\s*\|\s*textarea\s*\}\}")
 
-DEFAULT_TEMPLATE = Path(__file__).resolve().parent.parent / "example" / "make_a_topic_gate.txt"
+DEFAULT_TEMPLATE = Path(__file__).resolve().parent / "make_a_topic_gate.txt"
 
 
 def render_template(template_text: str, topic: str, exclude: str) -> str:
