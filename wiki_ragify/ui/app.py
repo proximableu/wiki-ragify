@@ -107,7 +107,7 @@ class ConfigScreen(Screen):
             self._submit()
         elif button_id == "cancel":
             self.post_message(ConfigCancelled())
-            self.pop_screen()
+            self.app.pop_screen()
 
     def _submit(self) -> None:  # pragma: no cover - Textual modal
         start_page = self.query_one("#start-page", Input).value.strip()
@@ -115,7 +115,7 @@ class ConfigScreen(Screen):
         if not start_page:
             return
         self.post_message(ConfigResult(start_page, prompt_path))
-        self.pop_screen()
+        self.app.pop_screen()
 
 
 # --- Query results overlay (FR-8) --------------------------------------------
@@ -158,7 +158,7 @@ class QueryScreen(Screen):
 
     def on_button_pressed(self, message: Button.Pressed) -> None:  # pragma: no cover
         if (message.button.id or "") == "query-back":
-            self.pop_screen()
+            self.app.pop_screen()
 
 
 # --- Application shell -------------------------------------------------------
