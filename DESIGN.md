@@ -377,9 +377,13 @@ Same keys as `.env.example`; the new `Config` reads them once. New tunables we m
 - [x] **3.7** Wire config dialog + resume-from-checkpoint flow into the app.
 
 ### Phase 4 — Hardening & sign-off
-- [ ] **4.1** Signal handling (SIGINT/SIGTERM) → graceful checkpoint + exit.
-- [ ] **4.2** Full pytest suite (target the ~48-test parity the old docs promised, minus the
-            subprocess-oriented tests that no longer apply).
+- [x] **4.1** Signal handling (SIGINT/SIGTERM) → graceful checkpoint + exit.  (TUI-level
+            handler posts a `Quit` message on the main thread; `on_quit` runs the same
+            graceful stop the STOP button uses, so the runner persists its checkpoint.)
+- [x] **4.2** Full pytest suite (target the ~48-test parity the old docs promised, minus the
+            subprocess-oriented tests that no longer apply).  Full suite passes (45 passed)
+            once the runtime deps (requests/pydantic/ollama/…) are installed; two
+            `save_prompt` path assertions were corrected to the shared `prompts/` dir.
 - [ ] **4.3** Manual end-to-end smoke run with real Ollama on one seed page.
 - [x] **4.4** `__main__.py` (`python -m wiki_ragify`) + README.
 
