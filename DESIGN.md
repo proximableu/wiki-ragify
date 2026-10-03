@@ -406,7 +406,8 @@ Same keys as `.env.example`; the new `Config` reads them once. New tunables we m
   `{{exclude | textarea}}` placeholders) and drives the *same gate model* the crawler uses
   to emit a topic-specific `gating_prompt.txt`. The rendered prompt is written under
   `output/prompts/` next to a small manifest recording the seeds used, so a run is traceable
-  back to its prompt. `example/make_gate_prompt.py` is the thin CLI wrapper — a **pre-run
+  back to its prompt. `wiki_ragify/gating/make_gate_prompt.py` is the thin CLI wrapper — a
+  **pre-run
   step, not part of the crawler**: it writes a prompt you then point
   `smoke_run.py --prompt ...` (or the TUI) at. Iterative refinement is built in — with
   `--refine`, the prompt from the previous pass is picked up automatically and fed back with
