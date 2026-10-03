@@ -85,7 +85,8 @@ def test_save_prompt_writes_txt_and_manifest(tmp_path):
     path = prompt_gen.save_prompt(prompt, "Autistic supremacism", "violence", output_dir=tmp_path)
     assert path.name == "autistic-supremacism.txt"
     assert path.read_text() == prompt
-    manifest = tmp_path / "autistic-supremacism.manifest.json"
+    # save_prompt writes into the shared prompts/ dir alongside the knowledge DB.
+    manifest = tmp_path / "prompts" / "autistic-supremacism.manifest.json"
     assert manifest.exists()
     data = json.loads(manifest.read_text())
     assert data["topic"] == "Autistic supremacism"
@@ -95,7 +96,7 @@ def test_save_prompt_writes_txt_and_manifest(tmp_path):
 
 def test_save_prompt_writes_nothing_on_empty(tmp_path):
     path = prompt_gen.save_prompt("", "Some topic", "", output_dir=tmp_path)
-    assert not path.exists()
-    # no prompt file or manifest is written for an empty prompt
+    # Nothing (no prompt file, no manifest) is written for an empty prompt; save_prompt
+    # still returns the prompts/ dir, which exists but holds nothing.
     assert list((tmp_path / "prompts").glob("*.txt")) == []
     assert list((tmp_path / "prompts").glob("*.manifest.json")) == []
