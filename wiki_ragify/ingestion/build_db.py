@@ -47,7 +47,9 @@ def build_db(
     upserts into ``documents`` / ``vec_documents``. No-op (with a warning) when the
     source directory has no ``*.md`` files — matching the reference.
 
-    ``db_path`` defaults to ``config.knowledge_dir/knowledge.db``.
+    ``db_path`` defaults to ``config.db_path(title)`` — a db sitting at the
+    output root, named from the seed page (e.g. ``output/autistic-supremacism.db``),
+    rather than ``knowledge/knowledge.db``.
     """
     from ..retrieval.store import load_db
 
@@ -55,7 +57,7 @@ def build_db(
         embed_client = EmbedClient(config)
 
     source_dir = Path(source_dir)
-    db_path = Path(db_path) if db_path is not None else config.knowledge_dir / "knowledge.db"
+    db_path = Path(db_path)
 
     md_files = sorted(source_dir.glob("*.md"))
     if not md_files:
@@ -84,12 +86,15 @@ def build_db(
         logger.debug(f"Deduplicated at ingestion: skipping {ident}")
 
     kept = index_documents(
-        [(str(p), text) for p, text in file_data],
+        [(p.name, text) for p, text in file_data],
         on_dedup=_report_dedup,
     )
 
     # Re-attach the original Path objects to the kept (identifier, text) pairs.
-    path_by_name = {p.name: p for p in file_data}
+    # ``file_data`` is a list of ``(Path, text)`` tuples, so unpack each pair.
+    # Identifiers are basenames (``p.name``), matching both the keys below and the
+    # reference's ``filename = file_path.name`` storage for stable IDs.
+    path_by_name = {f.name: f for f, _ in file_data}
     unique_file_data = [(path_by_name[ident], text) for ident, text in kept]
     logger.info(
         f"Deduplication complete. {len(unique_file_data)} / {len(file_data)} documents are unique."

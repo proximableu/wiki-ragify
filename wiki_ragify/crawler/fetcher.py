@@ -26,7 +26,13 @@ class WikiPageFetcher:
         self.headers = {"User-Agent": config.wiki_user_agent}
 
     def fetch_text(self, title: str, lang: str | None = None) -> Optional[str]:
-        """Fetch the plain-text extract for a title; return None on any failure."""
+        """Fetch the plain-text extract for a title; return None on any failure.
+
+        Fail-safe like the reference: a transient network/parse error must not abort the
+        crawl, so any failure is swallowed and surfaced as "no text" (which the crawler
+        treats as a bad page). The typed :class:`FetchError` is retained for callers that
+        want to catch it explicitly, but the default path never raises.
+        """
         lang = lang or self.config.wiki_lang
         url = "https://{lang}.wikipedia.org/w/api.php".format(lang=lang)
         params = {
@@ -46,7 +52,8 @@ class WikiPageFetcher:
                     return None
                 return p.get("extract", "")
         except Exception as e:  # noqa: BLE001
-            raise FetchError(f"{title}: {e}") from e
+            logger.warning("fetch_text(%s) failed: %s", title, e)
+            return None
 
     def fetch_links(self, title: str, lang: str | None = None) -> List[str]:
         """Fetch all outgoing intra-wikipedia links for a title, following pagination."""
@@ -73,5 +80,6 @@ class WikiPageFetcher:
                 else:
                     break
             except Exception as e:  # noqa: BLE001
-                raise FetchError(f"{title}: {e}") from e
+                logger.warning("fetch_links(%s) failed: %s", title, e)
+                return []
         return out

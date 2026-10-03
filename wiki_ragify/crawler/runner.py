@@ -15,7 +15,6 @@ from ..pipeline.events import ProgressEvent
 from ..logging_setup import get_logger
 from .cache import Cache
 from .errors import FetchError, GateError
-from .fetcher import WikiPageFetcher
 from .processor import PageProcessor
 
 logger = get_logger(__name__)
@@ -24,21 +23,38 @@ logger = get_logger(__name__)
 class Crawler:
     """Crawls Wikipedia from one or more seed titles, applying article-level gating."""
 
-    def __init__(self, config, evaluator, on_event: Callable[[ProgressEvent], None] | None = None):
+    def __init__(self, config, evaluator, on_event: Callable[[ProgressEvent], None] | None = None, fetcher=None):
         self.config = config
         self.evaluator = evaluator
         self.on_event = on_event
-        self.fetcher = WikiPageFetcher(config)
+        # Optional fetcher override so the runner can be exercised offline with a
+        # fake (no network). Defaults to the real Wikipedia fetcher.
         self.processor = PageProcessor(config)
-        self.cache_file = config.output_dir / "download_cache.json"
+        # An explicit fetcher override (e.g. a test fake); ``None`` means "build the real
+        # one lazily on first use".
+        self.__fetcher = fetcher
+        # Crawler artifacts (accepted pages + cache) live in ``output/``, matching the
+        # reference crawler and so the runner's splitter / phase-2 artifact check see them.
+        self.crawl_dir = config.output_dir / config.output_dirname
+        self.cache_file = self.crawl_dir / "download_cache.json"
         self.cache = Cache.load(self.cache_file)
+
+    @property
+    def fetcher(self):
+        # Lazily build the real Wikipedia fetcher only on first use, so importing this
+        # module needs no ``requests`` on the path.
+        if self.__fetcher is None:
+            from .fetcher import WikiPageFetcher
+
+            self.__fetcher = WikiPageFetcher(self.config)
+        return self.__fetcher
 
     def _emit(self, **kwargs):
         if self.on_event:
             self.on_event(ProgressEvent(**kwargs))
 
     def _save_accepted_page(self, title, text, fname):
-        path = self.config.output_dir / fname
+        path = self.crawl_dir / fname
         if path.exists():
             self._emit(stage="crawl", kind="skip", message=f"[SKIP] Already saved: {fname}")
             return
@@ -126,6 +142,7 @@ class Crawler:
     def crawl(self, start_titles: List[str], gating_prompt: str):
         """Crawl all seed pages (each + its direct links). Returns accepted titles."""
         total = len(start_titles)
+        self.crawl_dir.mkdir(parents=True, exist_ok=True)
         self._emit(stage="crawl", kind="info", message=f"[INFO] Starting crawl of {total} seed title(s)")
         accepted: List[str] = []
 

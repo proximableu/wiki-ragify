@@ -25,9 +25,8 @@ import shutil
 from pathlib import Path
 from typing import Callable
 
-from ollama import Client
-
 from ..config import Config
+from ..llm.gateway import LLMEvaluator
 from ..pipeline.events import ProgressEvent
 
 logger = logging.getLogger(__name__)
@@ -90,9 +89,9 @@ def has_insufficient_sentences(path: Path) -> bool:
 def process_article(
     path: Path,
     gating_prompt: str,
-    evaluator: Client,
-    model: str,
-    num_ctx: int,
+    evaluator: LLMEvaluator,
+    model: str = "",
+    num_ctx: int = 0,
     think: bool = False,
 ) -> bool:
     """Gate a single article artifact. Returns True if accepted.
@@ -114,18 +113,10 @@ def process_article(
     if not text:
         return False
 
-    full_prompt = f"{gating_prompt}\n\n<ARTICLE>\n{text}\n</ARTICLE>"
-    try:
-        response = evaluator.chat(
-            model=model,
-            messages=[{"role": "user", "content": full_prompt}],
-            options={"temperature": 0.0, "num_ctx": num_ctx, "think": think},
-        )
-        decision = response["message"]["content"].strip().lower()
-        return decision == "accepted"
-    except Exception as e:
-        logger.warning(f"Gate evaluation failed for {path.name}: {e}")
-        return False
+    # ``LLMEvaluator.evaluate`` re-assembles the <ARTICLE> block, applies retry +
+    # backoff, and returns a boolean on its own. The ``gate_files`` caller only
+    # needs that; the old ``Client.chat`` signature is dropped.
+    return evaluator.evaluate(text=text, gating_prompt=gating_prompt)
 
 
 def move_article(path: Path, decision: bool, source_dir: Path) -> None:
@@ -150,7 +141,7 @@ def gate_files(
     logger.info(f"Chunk-gating {len(files)} file(s) from {source_dir.name}")
 
     for i, path in enumerate(files, 1):
-        decision = process_article(path, gating_prompt, evaluator, config.gate_model, config.num_ctx)
+        decision = process_article(path, gating_prompt, evaluator)
         move_article(path, decision, source_dir)
         kind = "accept" if decision else "reject"
         msg = f"[{kind.upper()}] chunk {i}/{len(files)}: {path.name}"

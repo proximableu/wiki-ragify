@@ -68,8 +68,22 @@ class LLMEvaluator:
                 )
 
                 # Validate against Pydantic model and extract decision (native enforcement).
+                # Normalize to a decision prefix: lowercase and take the first four letters,
+                # so "ACCEPT"/"accepted"/"accepts" all collapse to "acce" and likewise for
+                # "REJECT"/"rejected"/"rejects" -> "reje". Any other verdict is unknown and
+                # falls through to the safe-default reject.
+                logger.debug(f"Raw gate response: {response.message.content!r}")
                 result = GatingResponse.model_validate_json(response.message.content)
-                return result.decision == "accepted"
+                decision = str(result.decision).strip().lower()[:4]
+                logger.debug(f"Normalized decision token: {decision!r} -> {result.decision!r}")
+                if decision == "acce":
+                    return True
+                if decision == "reje":
+                    return False
+                logger.warning(
+                    f"Unrecognized gate decision {result.decision!r}, defaulting to reject"
+                )
+                return False
 
             except Exception as e:  # noqa: BLE001 - fail-safe is deliberately broad
                 last_error = e

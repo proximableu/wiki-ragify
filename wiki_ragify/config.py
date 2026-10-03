@@ -76,7 +76,8 @@ class Config:
         )
     )
     min_text_length: int = field(default_factory=lambda: _get_int("MIN_TEXT_LENGTH", 1500))
-    max_title_length: int = field(default_factory=lambda: _get_int("MAX_TITLE_LENGTH", 200))
+    title_length_limit: int = field(default_factory=lambda: _get_int("MAX_TITLE_LENGTH", 200))
+    min_words: int = field(default_factory=lambda: _get_int("MIN_WORDS", 40))
     rate_limit_delay: float = field(default_factory=lambda: _get_float("RATE_LIMIT_DELAY", 0.35))
     request_timeout: int = field(default_factory=lambda: _get_int("REQUEST_TIMEOUT", 30))
 
@@ -116,6 +117,23 @@ class Config:
     # --- Paths that depend on the chosen output root ---
     output_dir: Path = field(default=None, compare=False)  # set by the caller / TUI
 
+    @property
+    def knowledge_dir(self) -> Path:
+        """``output_dir/knowledge`` — where accepted chunks are staged before taring."""
+        return self.output_dir / self.knowledge_dirname
+
+    def db_path(self, title: str) -> Path:
+        """Path to the knowledge base db for ``title``: ``output_dir/<title>.db``.
+
+        The filename is ``output_dir / db_titlepath(title)`` (e.g.
+        ``output/Autistic-supremacism.db``). Keeping this as the single derived
+        path — used by both ``build_db`` (write) and ``load_db`` (read) — means the
+        retrieval loader can never open a db at a different location than the
+        builder wrote. Falls back to ``output/knowledge.db`` if the title has no
+        filesystem-safe characters.
+        """
+        return self.output_dir / db_titlepath(title)
+
     def with_output_dir(self, output_dir: "os.PathLike[str] | str") -> "Config":
         """Return a new Config with ``output_dir`` bound (frozen dataclass => copy)."""
         return replace(self, output_dir=Path(output_dir))
@@ -134,6 +152,19 @@ def sanitize_title(title: str) -> str:
     safe = re.sub(r"\s+", "_", safe)
     digest = hashlib.sha256(title.encode("utf-8")).hexdigest()[:8]
     return f"{safe[:100]}_{digest}"
+
+
+def db_titlepath(title: str) -> str:
+    """Filesystem-safe db filename for a page: lowercase, spaces -> ``-``.
+
+    ``"Autistic supremacism"`` -> ``autistic-supremacism.db``. Deliberately
+    *not* ``sanitize_title`` — the knowledge-db name is kept short and readable,
+    without the content digest, and uses ``-`` separators to match the slugified
+    archive-title style. A blank title falls back to ``knowledge.db``.
+    """
+    safe = re.sub(r"[^a-zA-Z0-9 ]", "", title.lower())
+    safe = re.sub(r"\s+", "-", safe).strip("-")
+    return f"{safe}.db" if safe else "knowledge.db"
 
 
 @dataclass

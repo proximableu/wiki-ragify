@@ -40,6 +40,7 @@ from ..pipeline.checkpoint import (
     PHASE_3_SPLIT,
     PHASE_4_GATE,
     PHASE_5_ARCHIVE,
+    PHASE_6_INGEST,
     State,
 )
 from ..pipeline.archive import archive_accepted
@@ -74,9 +75,18 @@ class PipelineRunner:
 
     # --- event emission -------------------------------------------------------
 
-    def _emit(self, **kwargs) -> None:
+    def _emit(self, *args, **kwargs) -> None:
+        # Sub-callbacks (crawler, splitter, gate, ingest) call on_event(ProgressEvent(...))
+        # with a single positional event; the runner's own calls use keyword arguments.
+        # Accept both forms so `self._emit` is a valid `on_event` everywhere.
+        if args and isinstance(args[0], ProgressEvent):
+            event = args[0]
+        elif args or kwargs:
+            event = ProgressEvent(**kwargs)
+        else:
+            return
         if self.on_event:
-            self.on_event(ProgressEvent(**kwargs))
+            self.on_event(event)
 
     def _stat(self, name: str, value: float) -> None:
         if self.on_stat:
@@ -193,19 +203,6 @@ class PipelineRunner:
         else:
             self._emit(stage="archive", kind="warn", message=f"Phase 5: archive failed — {result.error}")
 
-    def _phase_6_ingest(self) -> None:
-        logger.info("--- Phase 6: ingest/embed (optional) ---")
-        self._emit(stage="ingest", kind="info", message="Phase 6: embed accepted chunks into sqlite-vec store")
-        from ..ingestion.build_db import build_db
-
-        build_db(
-            self.config.output_dir / self.config.knowledge_dirname,
-            self.config.knowledge_dir / "knowledge.db",
-            self.config,
-            embed_client=self.embed_client,
-            on_event=self._emit,
-        )
-
     # --- properties (constructed lazily, so the runner can be built without live deps) ---
 
     @property
@@ -296,7 +293,7 @@ class PipelineRunner:
         if self.state.is_phase_complete(PHASE_6_INGEST):
             return
 
-        accepted_dir = self.config.output_dir / self.config.chunks_dirname / self.config.gate_accept_dirname
+        accepted_dir = self.config.output_dir / self.config.knowledge_dirname
         if not accepted_dir.exists() or not any(accepted_dir.iterdir()):
             logger.warning("No accepted chunks — skipping optional ingest (nothing to embed).")
             self._emit(stage="ingest", kind="warn", message="No accepted chunks; skipping embed")
@@ -307,9 +304,10 @@ class PipelineRunner:
 
         logger.info("--- Phase 6: optional ingest/embed ---")
         self._emit(stage="ingest", kind="info", message="Phase 6: embedding accepted chunks")
+        from ..ingestion.build_db import build_db
         build_db(
             accepted_dir,
-            self.config.knowledge_dir / "knowledge.db",
+            self.config.db_path(self.pipeline.start_page),
             self.config,
             embed_client=self.embed_client,
             on_event=self._emit,

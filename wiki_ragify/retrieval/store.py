@@ -26,7 +26,10 @@ def load_db(db_path: str | None = None, config: Config | None = None) -> sqlite3
     from sqlite_vec import load as _load_vec  # imported lazily: only needed at runtime
 
     if db_path is None and config is not None:
-        db_path = config.knowledge_dir / "knowledge.db"
+        # Default: the knowledge db lives at the output root, named from the seed
+        # page. This mirrors where ``build_db`` writes, so a run that builds a db at
+        # output/Autistic-supremacism.db can always reopen the same file on read.
+        db_path = config.db_path("")
 
     db_path = str(db_path)
     db_dir = os.path.dirname(db_path)

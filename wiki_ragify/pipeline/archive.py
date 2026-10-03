@@ -60,7 +60,7 @@ def archive_accepted(
     chunks_dir = output_dir / chunks_dirname
     accept_dir = chunks_dir / accept_dirname
     knowledge_dir = output_dir / knowledge_dirname
-    archive_path = output_dir / f"{archive_name}.tgz"
+    archive_path = output_dir / archive_name
 
     # Empty-input graceful no-op — gate may have accepted nothing (e.g. every tiny
     # article dropped by the splitter). Archiving an empty set would fail with a
