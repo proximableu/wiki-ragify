@@ -67,6 +67,22 @@ Screen {
     width: 50%;
     border-right: $rounded $panel-border;
     background: $surface;
+    layout: vertical;
+}
+
+#stage-banner {
+    height: 3;
+    padding: 0 1;
+    content-align: center middle;
+    background: $surface-2;
+    border-bottom: $rounded $panel-border;
+    text-style: bold;
+    color: $text;
+}
+
+#progress-log {
+    width: 1fr;
+    height: 1fr;
 }
 
 #progress-panel .row-accept { color: $accent2; }
