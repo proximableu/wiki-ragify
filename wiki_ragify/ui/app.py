@@ -2,31 +2,22 @@
 
 This composes the widgets built in this package into one full-screen Textual app:
 
-* :class:`~wiki_ragify.ui.widgets.folder_tree.FolderTree` (FR-1) — the left folder picker.
 * :class:`~wiki_ragify.ui.widgets.progress_panel.ProgressPanel` (FR-3) — the central log.
 * :class:`~wiki_ragify.ui.widgets.stats_panel.StatsPanel` (FR-4) — the right stats panel.
 * :class:`~wiki_ragify.ui.widgets.query_box.QueryBox` (FR-8) — the footer query box.
 * A footer of run controls: RUN / PAUSE / RESUME / STOP (DESIGN §7).
-* A config modal that collects the start page + gating prompt before a run begins (FR-1 + §3.7).
+* A config modal that collects the start page, gating prompt, and **output directory**
+  before a run begins (FR-1 + §3.7). The output directory used to live in a sidebar
+  folder picker (the empty root left that paned blank); it now belongs in the config
+  modal, which is the only place a project folder can actually be picked in Textual 8.2.8
+  (no ``FileBrowser`` / ``DirectoryPicker`` exist here), and where the rest of the run
+  parameters are set.
 
 The runner (``PipelineRunner``) runs on a Textual worker thread; events it emits flow back
 to the UI through the app's ``on_event`` / ``on_stat`` callbacks, which post to the panels.
 The app never calls ``os.system`` or spawns subprocesses — the funnel is a pure in-process
 call. The run-controls state machine (idle/running/paused/stopped) is small and deliberate so
 it can be reasoned about off-screen.
-
-Signal handling (DESIGN §4.1 / FR-6): a signal can only be caught on the main thread, and
-the runner lives on a worker thread, so the handler lives here. On SIGINT/SIGTERM the app
-posts an internal :class:`Quit` message and :meth:`on_quit` runs the same graceful stop the
-STOP button uses — the runner sets its stop event, finishes the current phase, persists the
-checkpoint at that durable boundary, and its worker exits. The checkpoint is therefore
-always up to date before the process leaves, matching the old orchestrator's behaviour.
-
-Textual 8.2.8 note: there is no built-in prompt dialog (``Prompt`` arrived in Textual 1.0),
-so the start-page / prompt entry is a small custom modal screen (:class:`ConfigScreen`) that
-posts a :class:`ConfigResult` / :class:`ConfigCancelled` message and lets the app decide what
-to do with the confirmation. All button handlers are keyed off the widget ``id`` because
-8.2.8 dispatches ``Button.Pressed`` to a single ``on_button_pressed`` on the handler.
 """
 
 from __future__ import annotations
@@ -41,10 +32,9 @@ from textual.message import Message
 from textual.widgets import Button, DataTable, Header, Input, Static
 
 from ..config import Config, PipelineConfig
-from ..pipeline.checkpoint import State, phase_progress
+from ..pipeline.checkpoint import State
 from ..pipeline.runner import PipelineRunner
 from ..pipeline.events import ProgressEvent, StatEvent
-from .widgets.folder_tree import FolderTree, ProjectInfo, ProjectSelected
 from .widgets.progress_panel import ProgressPanel
 from .widgets.stats_panel import StatsPanel
 from .widgets.query_box import QueryBox, QueryRow, Submitted, build_rows, run_query
@@ -54,12 +44,13 @@ from .widgets.query_box import QueryBox, QueryRow, Submitted, build_rows, run_qu
 
 
 class ConfigResult(Message):
-    """Carries the confirmed start page + prompt path out of :class:`ConfigScreen`."""
+    """Carries the confirmed start page + prompt path + output dir out of ``ConfigScreen``."""
 
-    def __init__(self, start_page: str, prompt_path: str) -> None:
+    def __init__(self, start_page: str, prompt_path: str, output_dir: Path) -> None:
         super().__init__()
         self.start_page = start_page
         self.prompt_path = Path(prompt_path)
+        self.output_dir = Path(output_dir)
 
 
 class ConfigCancelled(Message):
@@ -71,16 +62,19 @@ class Quit(Message):
 
 
 class ConfigScreen(Screen):
-    """A small modal that collects the start page and gating prompt for a run.
+    """A small modal that collects the start page, prompt path, and output directory.
 
     The heavy lifting (prompt rendering, project discovery) stays in the library; this screen
-    only gathers the two strings and posts a :class:`ConfigResult` on confirmation.
+    only gathers the three strings and posts a :class:`ConfigResult` on confirmation. The output
+    directory is validated to be an existing directory at submit time (a non-existent one shows
+    an inline warning and does not submit).
     """
 
-    def __init__(self, start_page: str = "", prompt_path: str = "") -> None:
+    def __init__(self, start_page: str = "", prompt_path: str = "", output_root: str = "") -> None:
         super().__init__(id="config-screen")
         self._start_page = start_page
         self._prompt_path = prompt_path
+        self._output_root = Path(output_root)
 
     def compose(self) -> ComposeResult:
         yield Static("Configure run", id="config-title")
@@ -92,6 +86,9 @@ class ConfigScreen(Screen):
             id="prompt-path",
             placeholder="absolute path to gating_prompt.txt",
         )
+        yield Static("Output directory (where this project's data lives):")
+        yield Input(value=str(self._output_root), id="output-dir")
+        yield Static("", id="output-warning")
         yield Container(Button("Confirm", id="confirm"), Button("Cancel", id="cancel"), id="config-actions")
 
     async def on_mount(self) -> None:  # pragma: no cover - Textual lifecycle
@@ -112,9 +109,23 @@ class ConfigScreen(Screen):
     def _submit(self) -> None:  # pragma: no cover - Textual modal
         start_page = self.query_one("#start-page", Input).value.strip()
         prompt_path = self.query_one("#prompt-path", Input).value.strip()
+        output_dir = self.query_one("#output-dir", Input).value.strip()
         if not start_page:
             return
-        self.post_message(ConfigResult(start_page, prompt_path))
+        warn = self.query_one("#output-warning", Static)
+        # Validate the output directory is an existing directory.
+        out_path = Path(output_dir).expanduser()
+        if not out_path.exists() or not out_path.is_dir():
+            warn.update("⚠  Output directory does not exist")
+            return
+        # Expand ~ on the prompt path and require the file to exist, so a "~/…" path
+        # like the one in the screenshot resolves instead of crashing the runner.
+        prompt_p = Path(prompt_path).expanduser()
+        if not prompt_p.exists() or not prompt_p.is_file():
+            warn.update("⚠  Gating prompt file does not exist")
+            return
+        warn.update("")
+        self.post_message(ConfigResult(start_page, str(prompt_p), out_path))
         self.app.pop_screen()
 
 
@@ -180,7 +191,11 @@ class WikiRagifyApp(App):
         self._base_config = config
         self.config = config
         self.runner: Optional[PipelineRunner] = None
-        self._selected: Optional[ProjectInfo] = None
+        # Raw config from the CONFIG modal (start page + prompt path + output dir),
+        # set by CONFIG and consumed by RUN. None until the user has configured a run.
+        self._config_start_page: Optional[str] = None
+        self._config_prompt_path: Optional[str] = None
+        self._config_output_dir: Optional[Path] = None
         # idle | running | paused | stopped
         self._run_state = "idle"
 
@@ -200,6 +215,31 @@ class WikiRagifyApp(App):
 
     def on_mount(self) -> None:
         self.install_signal_handlers()
+        # 8.2.8 has no `stylesheets` class attribute; load styles.tcss ourselves
+        # relative to this module, so the palette (colours on the panels + footer)
+        # actually applies (otherwise the progress/stats panels render blank).
+        styles_path = Path(__file__).resolve().parent / "styles.tcss"
+        self.stylesheet.read(styles_path)
+        # The stylesheet docks #query-input left (60%) and #run-controls right, but
+        # dock doesn't reserve space for the controls' fixed, natural-width buttons,
+        # so they collide with the query box and the quit button overflows a narrow
+        # terminal. Drop both dock rules and lay the footer out as a plain horizontal
+        # flow — query box (flex: 1) takes the leftover width, controls sit beside it
+        # at natural size. Colours still come entirely from the stylesheet.
+        self.query_one("#query-input").styles.dock = None
+        self.query_one("#query-input").styles.flex = (1, 0, 0)
+        run_controls = self.query_one("#run-controls")
+        run_controls.styles.dock = None
+        run_controls.styles.layout = "horizontal"
+        # The stats panel folds events off-thread but only repaints when asked; a
+        # timer on the main thread drives that repaint (never touched from the worker
+        # thread). The progress panel repaints itself on write, so this is the one
+        # widget that would otherwise never re-render.
+        self.set_interval(0.25, self._repaint_stats)
+
+    def _repaint_stats(self) -> None:  # pragma: no cover - main-thread only
+        panel = self.query_one("#stats-panel", StatsPanel)
+        panel.maybe_repaint()
 
     def on_quit(self) -> None:
         """Handle a graceful stop: STOP the runner so it checkpoints, then leave the app.
@@ -237,7 +277,7 @@ class WikiRagifyApp(App):
         )
         self._run_state = "running"
         self._refresh_status_bar()
-        self.app.run_worker(self._drive, exclusive=True)
+        self.app.run_worker(self._drive, exclusive=True, thread=True)
 
     def _drive(self) -> None:
         assert self.runner is not None
@@ -256,6 +296,14 @@ class WikiRagifyApp(App):
             self._run_state = "running"
         self._refresh_status_bar()
 
+    def resume_run(self) -> None:
+        """Explicit RESUME (DESIGN §6): unpause a paused run. A no-op otherwise."""
+        if self.runner is None or self._run_state != "paused":
+            return
+        self.runner.resume()
+        self._run_state = "running"
+        self._refresh_status_bar()
+
     def stop_run(self) -> None:
         if self.runner is not None:
             self.runner.stop()
@@ -270,24 +318,13 @@ class WikiRagifyApp(App):
             "stopped": "STOPPED",
         }
         indicator = self.query_one("#status-indicator", Static)
-        indicator.content = labels[self._run_state]
+        base = labels[self._run_state]
+        # Prefix the configured output directory so the bar matches §6's "project: …".
+        out = self._config_output_dir if self._config_output_dir else "<no project>"
+        indicator.content = f"project: {out}  {base}"
         # Colour the bar via a state class (styles.tcss: .running/.paused/.stopped).
         indicator.remove_class("running", "paused", "stopped")
         indicator.add_class(self._run_state)
-
-    # --- folder selection (FR-1) ----------------------------------------------
-
-    def on_project_selected(self, message: ProjectSelected) -> None:
-        project = message.project
-        self._selected = project
-        # Rebind config.output_dir so checkpoints, artifacts, and the query store all
-        # resolve against the chosen project directory.
-        self.config = self._base_config.with_output_dir(project.project_dir)
-        state = State(project.state_file)
-        done, total = phase_progress(state)
-        self.query_one("#progress-panel", ProgressPanel).set_state(state)
-        self._run_state = "idle"
-        self._refresh_status_bar()
 
     # --- run controls (footer) ------------------------------------------------
 
@@ -296,36 +333,61 @@ class WikiRagifyApp(App):
         if button_id == "run-button":
             if self.runner is not None and self._run_state in ("running", "paused"):
                 return
-            if self._selected is None:
+            if self._config_start_page is None or self._config_output_dir is None:
                 self.query_one("#progress-panel", ProgressPanel).add_event(
                     ProgressEvent(
                         stage="crawl",
                         kind="warn",
-                        message="Select a project in the folder picker first",
+                        message="Run CONFIG first to set start page, prompt, and output dir",
                     )
                 )
                 return
-            self.push_screen(ConfigScreen(), callback=self._on_config_result)
+            self._begin_run(self._make_pipeline())
+        elif button_id == "config-button":
+            self.push_screen(ConfigScreen(output_root=str(self.root)), callback=self._on_config_result)
+        elif button_id == "resume-button":
+            self.resume_run()
         elif button_id == "pause-button":
             self.toggle_pause()
         elif button_id == "stop-button":
             self.stop_run()
+        elif button_id == "quit-button":
+            self.exit()
 
-    def _on_config_result(self, message: ConfigResult | ConfigCancelled) -> None:
-        if isinstance(message, ConfigCancelled):
-            return
-        assert self._selected is not None
-        output_dir = self._selected.project_dir
-        cfg = self._base_config.with_output_dir(output_dir)
-        pipeline = PipelineConfig(
-            start_page=message.start_page,
-            prompt_path=message.prompt_path,
-            output_dir=output_dir,
+    def _make_pipeline(self) -> PipelineConfig:
+        """Build a PipelineConfig bound to the configured output directory.
+
+        The output dir is captured at CONFIG time (CONFIG and the run parameters are
+        now one step — the sidebar picker was removed), so RUN simply wires the three
+        stored strings into the runner. Assumes ``self._config_output_dir`` and
+        ``self._config_start_page`` were already checked by the caller.
+        """
+        assert self._config_output_dir is not None
+        return PipelineConfig(
+            start_page=self._config_start_page,
+            prompt_path=self._config_prompt_path,
+            output_dir=self._config_output_dir,
             ingest=True,
         )
-        # Run against the project-scoped config so checkpoints + query store line up.
-        self.config = cfg
-        self._begin_run(pipeline)
+
+    def _on_config_result(self, message: ConfigResult | ConfigCancelled) -> None:
+        # CONFIG is an explicit, independent entry point that runs before a run begins,
+        # so it stores the raw start page, prompt path, and output directory; RUN binds
+        # them into a PipelineConfig. A Cancel keeps the current values; only a Confirm
+        # replaces them.
+        if isinstance(message, ConfigResult):
+            self._config_start_page = message.start_page
+            self._config_prompt_path = message.prompt_path
+            self._config_output_dir = message.output_dir
+            self._run_state = "idle"
+            # Bind the configured output dir so checkpoints, artifacts, and the query
+            # store all resolve against it.
+            self.config = self._base_config.with_output_dir(message.output_dir)
+            # Show the chosen project's checkpoint in the progress panel so the user can
+            # see where a prior run stopped.
+            state = State(message.output_dir / "pipeline_state.json")
+            self.query_one("#progress-panel", ProgressPanel).set_state(state)
+            self._refresh_status_bar()
 
     # --- query box (FR-8) -----------------------------------------------------
 
@@ -350,21 +412,27 @@ class WikiRagifyApp(App):
         self.push_screen(QueryScreen(message.rows, message.message))
 
     def compose(self) -> ComposeResult:
-        """Build the full-screen layout: header | status | three panels | footer."""
+        """Build the full-screen layout: header | status | progress + stats | footer.
+
+        The output directory is chosen in the CONFIG modal (the sidebar picker was
+        removed — Textual 8.2.8 has no file-browser widget), so the main region is
+        just the progress window and the rolling stats panel. The footer's horizontal
+        flow (query box + six run controls) is tuned in ``on_mount`` after the
+        stylesheet loads, so the dock rules there don't crowd the natural-width buttons.
+        """
         yield Header()
         yield Static("IDLE", id="status-indicator")
-        yield Container(
-            FolderTree(self.root, id="folder-tree"),
-            ProgressPanel(),
-            StatsPanel(),
-            id="main",
-        )
+        yield Container(ProgressPanel(), StatsPanel(), id="main")
+
         yield Container(
             QueryBox(),
             Container(
+                Button("Config", id="config-button"),
                 Button("Run", id="run-button"),
                 Button("Pause", id="pause-button"),
+                Button("Resume", id="resume-button"),
                 Button("Stop", id="stop-button"),
+                Button("Quit", id="quit-button"),
                 id="run-controls",
             ),
             id="footer",

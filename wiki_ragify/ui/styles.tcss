@@ -2,21 +2,22 @@
  *
  * Three regions: the left folder picker (FR-1), the central progress window
  * (FR-3), and the right stats panel (FR-4). A footer carries the query box (FR-8)
- * and the run controls (RUN / PAUSE / STOP, §7 pause/resume model).
+ * and the run controls (CONFIG | RUN | PAUSE | RESUME | STOP | QUIT, §6/§7).
  *
- * Colors are chosen for a dark terminal with high contrast. The accept/reject/skip
- * decisions from the two LLM gates map onto accent2 / error / subtle so the log
- * stays readable without any hardcoding of the palette in the widget code.
+ * NOTE: literal color values are used (not Textual custom variables). Textual
+ * 8.2.8 cannot parse a stylesheet that references an undefined variable, so any
+ * `$var` that isn't defined drops the entire stylesheet and the panels render
+ * blank. Keeping the palette inline means every rule parses independently.
  *
- * Note: the progress/stats panels are RichLog widgets (not Tables), so styling
- * targets their rows via the LogRow styles (see eventlog.py); the run-controls and
- * query box are plain widgets in a Container(id="footer").
+ * The progress/stats panels are RichLog widgets (not Tables), so styling targets
+ * their rows via the LogRow styles (see eventlog.py); the run-controls and query
+ * box are plain widgets in a Container(id="footer").
  */
 
 Screen {
     layout: vertical;
-    background: $surface;
-    color: $text;
+    background: #1b1b1b;
+    color: #e6e6e6;
 }
 
 /* --- Top bar: run-status indicator ------------------------------------------ */
@@ -25,29 +26,29 @@ Screen {
     dock: left;
     height: 1;
     padding: 0 1;
-    background: $warning;
-    color: $on-warning;
+    background: #f0ad4e;
+    color: #1b1b1b;
     text-style: bold;
 }
 
 #status-indicator.running {
-    background: $success;
-    color: $on-success;
+    background: #2f9e44;
+    color: #ffffff;
 }
 
 #status-indicator.paused {
-    background: $warning;
-    color: $on-warning;
+    background: #f0ad4e;
+    color: #1b1b1b;
 }
 
 #status-indicator.stopped {
-    background: $error;
-    color: $on-error;
+    background: #d9534f;
+    color: #ffffff;
 }
 
 #status-indicator.idle {
-    background: $primary;
-    color: $on-primary;
+    background: #3b5bdb;
+    color: #ffffff;
 }
 
 /* --- Main region: folder tree | progress | stats -------------------------- */
@@ -59,14 +60,14 @@ Screen {
 
 #folder-tree {
     width: 30%;
-    border-right: $rounded $panel-border;
-    background: $surface-2;
+    border-right: round #3a3a3a;
+    background: #232323;
 }
 
 #progress-panel {
     width: 50%;
-    border-right: $rounded $panel-border;
-    background: $surface;
+    border-right: round #3a3a3a;
+    background: #1b1b1b;
     layout: vertical;
 }
 
@@ -74,10 +75,10 @@ Screen {
     height: 3;
     padding: 0 1;
     content-align: center middle;
-    background: $surface-2;
-    border-bottom: $rounded $panel-border;
+    background: #232323;
+    border-bottom: round #3a3a3a;
     text-style: bold;
-    color: $text;
+    color: #e6e6e6;
 }
 
 #progress-log {
@@ -85,17 +86,9 @@ Screen {
     height: 1fr;
 }
 
-#progress-panel .row-accept { color: $accent2; }
-#progress-panel .row-reject { color: $error; }
-#progress-panel .row-skip   { color: $subtle; }
-#progress-panel .row-info   { color: $primary; }
-#progress-panel .row-warn   { color: $warning; }
-#progress-panel .row-tick   { color: $subtle; }
-#progress-panel .row-stage-done { color: $success; }
-
 #stats-panel {
     width: 20%;
-    background: $surface-2;
+    background: #232323;
 }
 
 /* --- Footer: query box + run controls ------------------------------------- */
@@ -104,8 +97,8 @@ Screen {
     dock: bottom;
     height: 3;
     layout: horizontal;
-    border-top: $rounded $panel-border;
-    background: $surface-2;
+    border-top: round #3a3a3a;
+    background: #232323;
     padding: 0 1;
 }
 
@@ -115,9 +108,8 @@ Screen {
 }
 
 #query-input Input {
-    background: $surface;
-    color: $text;
-    placeholder-color: $subtle;
+    background: #1b1b1b;
+    color: #e6e6e6;
 }
 
 #run-controls {
@@ -129,19 +121,34 @@ Screen {
     margin: 0 1;
 }
 
+#run-controls #config-button {
+    background: #3b5bdb;
+    color: #ffffff;
+}
+
 #run-controls #run-button {
-    background: $success;
-    color: $on-success;
+    background: #2f9e44;
+    color: #ffffff;
 }
 
 #run-controls #pause-button {
-    background: $warning;
-    color: $on-warning;
+    background: #f0ad4e;
+    color: #1b1b1b;
+}
+
+#run-controls #resume-button {
+    background: #5bc0de;
+    color: #1b1b1b;
 }
 
 #run-controls #stop-button {
-    background: $error;
-    color: $on-error;
+    background: #d9534f;
+    color: #ffffff;
+}
+
+#run-controls #quit-button {
+    background: #6c757d;
+    color: #ffffff;
 }
 
 /* --- Query results overlay ------------------------------------------------ */
@@ -150,10 +157,10 @@ Screen {
     width: 70%;
     height: 70%;
     dock: top;
-    center-vertical: true;
-    border: $rounded $accent;
-    background: $surface;
-    color: $text;
+    content-align-vertical: middle;
+    border: round #7c4dff;
+    background: #1b1b1b;
+    color: #e6e6e6;
 }
 
 #query-overlay #query-message {
@@ -171,8 +178,8 @@ Screen {
 }
 
 #query-overlay #query-back {
-    background: $accent;
-    color: $on-accent;
+    background: #7c4dff;
+    color: #ffffff;
 }
 
 /* --- Config modal (start page + prompt entry) ----------------------------- */
@@ -181,10 +188,10 @@ Screen {
     width: 60%;
     height: auto;
     dock: top;
-    center-vertical: true;
-    border: $rounded $accent;
-    background: $surface-2;
-    color: $text;
+    content-align-vertical: middle;
+    border: round #7c4dff;
+    background: #232323;
+    color: #e6e6e6;
     padding: 1 2;
 }
 
@@ -200,17 +207,16 @@ Screen {
 }
 
 #config-screen #confirm {
-    background: $success;
-    color: $on-success;
+    background: #2f9e44;
+    color: #ffffff;
 }
 
 #config-screen #cancel {
-    background: $error;
-    color: $on-error;
+    background: #d9534f;
+    color: #ffffff;
 }
 
 #config-screen Input {
-    background: $surface;
-    color: $text;
-    placeholder-color: $subtle;
+    background: #1b1b1b;
+    color: #e6e6e6;
 }
