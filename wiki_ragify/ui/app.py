@@ -256,6 +256,10 @@ class WikiRagifyApp(App):
     def _on_event(self, event: ProgressEvent) -> None:
         panel = self.query_one("#progress-panel", ProgressPanel)
         panel.add_event(event)
+        # The stats panel folds the same ProgressEvent stream (crawl accept/reject,
+        # split chunks) that the runner already emits as StatEvents; feeding it here is
+        # what makes FR-4 live-update while the run crawls.
+        self.query_one("#stats-panel", StatsPanel).feed(event)
 
     def _on_stat(self, event: StatEvent) -> None:
         panel = self.query_one("#stats-panel", StatsPanel)
@@ -344,7 +348,14 @@ class WikiRagifyApp(App):
                 return
             self._begin_run(self._make_pipeline())
         elif button_id == "config-button":
-            self.push_screen(ConfigScreen(output_root=str(self.root)), callback=self._on_config_result)
+            self.push_screen(
+                ConfigScreen(
+                    start_page=self._config_start_page or "",
+                    prompt_path=self._config_prompt_path or "",
+                    output_root=str(self.root),
+                ),
+                callback=self._on_config_result,
+            )
         elif button_id == "resume-button":
             self.resume_run()
         elif button_id == "pause-button":

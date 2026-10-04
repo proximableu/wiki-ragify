@@ -147,7 +147,13 @@ class Crawler:
         accepted: List[str] = []
 
         for i, title in enumerate(start_titles, 1):
-            self._emit(stage="crawl", kind="tick", message=f"=== {i}/{total}: {title} ===")
+            self._emit(
+                stage="crawl",
+                kind="tick",
+                index=i,
+                total=total,
+                message=f"=== {i}/{total}: {title} ===",
+            )
             ok, _ = self._process_single(title, gating_prompt)
             _, linked = self._process_linked(title, gating_prompt)
             if ok:
