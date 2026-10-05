@@ -27,6 +27,16 @@ dev = ["pytest"]
 [project.scripts]
 wiki-ragify = "wiki_ragify.__main__:main"
 
+[tool.uv]
+# Project-managed by uv (see https://docs.astral.sh/uv/).
+# Build artifacts: `uv build` -> ./dist/ (sdist + wheel).
+package = true
+
+# Bundle runtime data files that aren't .py (styles + template). Without this,
+# `packages.find` ships only .py files and the CLI crashes (styles.tcss missing).
+[tool.setuptools.package-data]
+wiki_ragify = ["gating/*.txt", "ui/*.tcss"]
+
 [tool.setuptools.packages.find]
 include = ["wiki_ragify*"]
 
