@@ -184,6 +184,7 @@ Screen {
     width: 60%;
     height: auto;
     dock: top;
+    layout: vertical;
     content-align-vertical: middle;
     border: round #7c4dff;
     background: #232323;
@@ -207,6 +208,11 @@ Screen {
     height: 8;
 }
 
+#config-screen #target-topic TextArea {
+    width: 1fr;
+    height: 8;
+}
+
 #config-screen #exclude-topic TextArea {
     width: 1fr;
     height: 3;
@@ -216,7 +222,6 @@ Screen {
     margin: 0 0 1 0;
     background: #2f9e44;
     color: #ffffff;
-    dock: right;
 }
 
 #config-screen #no-db {
