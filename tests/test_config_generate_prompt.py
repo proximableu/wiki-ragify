@@ -32,7 +32,7 @@ def _run(coro_factory) -> None:
 
 def _generate(app: WikiRagifyApp, monkeypatch: pytest.MonkeyPatch) -> None:
     """Drive the Generate button and await the worker result, with generation faked."""
-    monkeypatch.setattr(prompt_gen, "DEFAULT_TEMPLATE", "TOPIC: {{target_topic | textarea}}")
+    monkeypatch.setattr(prompt_gen, "DEFAULT_TEMPLATE", prompt_gen.DEFAULT_TEMPLATE)
     monkeypatch.setattr(prompt_gen, "_generate", lambda *a, **k: "GENERATED PROMPT")
     app.screen.query_one("#generate-prompt").press()
     for _ in range(10):
@@ -41,7 +41,7 @@ def _generate(app: WikiRagifyApp, monkeypatch: pytest.MonkeyPatch) -> None:
 
 async def _test_generate_writes_and_prefills(tmp_path, monkeypatch):
     app = _make_app(tmp_path)
-    monkeypatch.setattr(prompt_gen, "DEFAULT_TEMPLATE", "TOPIC: {{target_topic | textarea}}")
+    monkeypatch.setattr(prompt_gen, "DEFAULT_TEMPLATE", prompt_gen.DEFAULT_TEMPLATE)
     monkeypatch.setattr(prompt_gen, "_generate", lambda *a, **k: "GENERATED PROMPT")
     async with app.run_test() as pilot:
         app.push_screen(ConfigScreen(output_root=str(app.root), config=app.config))
@@ -62,7 +62,7 @@ async def _test_generate_overwrites(tmp_path, monkeypatch):
     explicit = tmp_path / "my_prompt.txt"
     explicit.write_text("OLD CONTENT", encoding="utf-8")
     app = _make_app(tmp_path)
-    monkeypatch.setattr(prompt_gen, "DEFAULT_TEMPLATE", "TOPIC: {{target_topic | textarea}}")
+    monkeypatch.setattr(prompt_gen, "DEFAULT_TEMPLATE", prompt_gen.DEFAULT_TEMPLATE)
     monkeypatch.setattr(prompt_gen, "_generate", lambda *a, **k: "NEW PROMPT")
     async with app.run_test() as pilot:
         app.push_screen(ConfigScreen(output_root=str(app.root), prompt_path=str(explicit), config=app.config))

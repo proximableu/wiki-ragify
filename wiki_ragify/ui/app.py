@@ -159,7 +159,10 @@ class ConfigScreen(Screen):
             )
             try:
                 text = prompt_gen.generate_gating_prompt(
-                    prompt_gen.DEFAULT_TEMPLATE, topic, exclude, config=self._config
+                    prompt_gen.DEFAULT_TEMPLATE.read_text(encoding="utf-8"),
+                    topic,
+                    exclude,
+                    config=self._config,
                 )
                 if not text.strip():
                     warn.update("✗  Generation produced no prompt")
