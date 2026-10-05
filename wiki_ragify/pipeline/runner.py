@@ -34,6 +34,7 @@ from typing import Callable, Optional
 from ..config import Config, PipelineConfig, sanitize_title
 from ..logging_setup import get_logger
 from ..pipeline.events import ProgressEvent, StatEvent
+from ..pipeline.interrupt import make_interrupt, StopRequested
 from ..pipeline.checkpoint import (
     PHASE_1_SEED,
     PHASE_2_LIST,
@@ -114,6 +115,16 @@ class PipelineRunner:
             time.sleep(0.1)
         return True
 
+    def _interrupt(self) -> None:
+        """Between-iterations hook for long phase-body loops.
+
+        Blocks while paused (returning immediately if a stop is pending) and raises
+        :class:`StopRequested` when the run has been stopped, so a phase body can exit
+        cleanly between items — leaving its phase marked incomplete so it re-runs safely
+        rather than being skipped as if it had finished.
+        """
+        make_interrupt(self._pause, self._stop)()
+
     # --- artifact validation (dual-layer checkpointing) -----------------------
 
     def _artifact_complete(self, phase: str) -> bool:
@@ -149,7 +160,7 @@ class PipelineRunner:
         from ..crawler.runner import Crawler
 
         crawler = Crawler(self.config, self.evaluator, on_event=self._emit)
-        crawler.crawl([self.pipeline.start_page], self.gating_prompt)
+        crawler.crawl([self.pipeline.start_page], self.gating_prompt, interrupt=self._interrupt)
 
     def _phase_2_list(self) -> None:
         logger.info("--- Phase 2: list crawl ---")
@@ -162,7 +173,7 @@ class PipelineRunner:
 
         crawler = Crawler(self.config, self.evaluator, on_event=self._emit)
         titles = [t for t in list_file.read_text(encoding="utf-8").splitlines() if t.strip()]
-        crawler.crawl(titles, self.gating_prompt)
+        crawler.crawl(titles, self.gating_prompt, interrupt=self._interrupt)
 
     def _phase_3_split(self) -> None:
         logger.info("--- Phase 3: split ---")
@@ -185,6 +196,7 @@ class PipelineRunner:
             self.config,
             self.evaluator,
             on_event=self._emit,
+            interrupt=self._interrupt,
         )
 
     def _phase_5_archive(self) -> None:
@@ -271,7 +283,12 @@ class PipelineRunner:
                 logger.info("Pipeline stopped by user.")
                 return
 
-            body()
+            try:
+                body()
+            except StopRequested:
+                logger.info("Pipeline stopped during %s.", phase_id)
+                return
+
             self.state.mark_phase_complete(phase_id)
             self._stat(f"phase_{phase_id}", 1.0)
 
@@ -311,6 +328,7 @@ class PipelineRunner:
             self.config,
             embed_client=self.embed_client,
             on_event=self._emit,
+            interrupt=self._interrupt,
         )
         self.state.mark_phase_complete(PHASE_6_INGEST)
 

@@ -19,6 +19,7 @@ def split_dir(
     out_dir: Path,
     config: Config,
     on_event: Callable[[ProgressEvent], None],
+    interrupt: Callable[[], None] = None,
 ) -> List[Path]:
     """Split every .txt/.md in ``src_dir`` into ``out_dir``; return all output paths."""
     src_dir = Path(src_dir)
@@ -37,6 +38,8 @@ def split_dir(
 
     all_paths: List[Path] = []
     for f in sorted(in_files):
+        if interrupt is not None:
+            interrupt()
         try:
             saved = process_file(
                 f, out_dir, max_tokens=max_tokens, max_chars=config.max_chars, tokenizer_model=config.tokenizer_model

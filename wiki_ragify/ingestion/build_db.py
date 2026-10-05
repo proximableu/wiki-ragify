@@ -40,6 +40,7 @@ def build_db(
     config: Config,
     embed_client: EmbedClient | None = None,
     on_event: Callable[[ProgressEvent], None] | None = None,
+    interrupt: Callable[[], None] = None,
 ) -> None:
     """Ingest ``*.md`` files from ``source_dir`` into the sqlite-vec store at ``db_path``.
 
@@ -118,6 +119,8 @@ def build_db(
     processed_count = 0
 
     for start in range(0, len(unique_file_data), batch_size):
+        if interrupt is not None:
+            interrupt()
         batch = unique_file_data[start : start + batch_size]
         texts = [text for _, text in batch]
 

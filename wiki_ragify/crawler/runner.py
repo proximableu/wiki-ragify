@@ -23,9 +23,14 @@ logger = get_logger(__name__)
 class Crawler:
     """Crawls Wikipedia from one or more seed titles, applying article-level gating."""
 
-    def __init__(self, config, evaluator, on_event: Callable[[ProgressEvent], None] | None = None, fetcher=None):
+    def __init__(self, config, evaluator, on_event: Callable[[ProgressEvent], None] | None = None, fetcher=None,
+                 interrupt: Callable[[], None] | None = None):
         self.config = config
         self.evaluator = evaluator
+        # Between-iterations hook from the runner: blocks while paused and raises to
+        # stop cleanly, so a Pause/Stop is honored mid-crawl (not only at the phase end).
+        self.interrupt = interrupt
+        # Event emission back to the runner for the live UI log.
         self.on_event = on_event
         # Optional fetcher override so the runner can be exercised offline with a
         # fake (no network). Defaults to the real Wikipedia fetcher.
@@ -89,7 +94,7 @@ class Crawler:
         self._emit(stage="crawl", kind="reject", message=f"[REJECT] {title}")
         return False, fname
 
-    def _process_linked(self, seed_title, gating_prompt):
+    def _process_linked(self, seed_title, gating_prompt, interrupt: Callable[[], None] | None = None):
         self._emit(stage="crawl", kind="info", message=f"[INFO] Fetching links from seed: {seed_title}")
         raw_links = self.fetcher.fetch_links(seed_title)
         if not raw_links:
@@ -115,6 +120,9 @@ class Crawler:
                 self._emit(stage="crawl", kind="skip", message=f"[=SKIP=] {link} : [REJECT]")
                 continue
 
+            if interrupt is not None:
+                interrupt()
+
             text = self.fetcher.fetch_text(link)
             if not text or self.processor.is_bad_page(link, text):
                 self.cache.add_rejected(link)
@@ -139,8 +147,14 @@ class Crawler:
 
         return accepted_count, accepted_titles
 
-    def crawl(self, start_titles: List[str], gating_prompt: str):
-        """Crawl all seed pages (each + its direct links). Returns accepted titles."""
+    def crawl(self, start_titles: List[str], gating_prompt: str,
+              interrupt: Callable[[], None] | None = None):
+        """Crawl all seed pages (each + its direct links). Returns accepted titles.
+
+        ``interrupt`` is an optional between-iterations hook (blocks while paused,
+        raises to stop). It is checked once per seed and again between the links of each
+        seed, so a Pause/Stop is honored mid-crawl, not only when the phase ends.
+        """
         total = len(start_titles)
         self.crawl_dir.mkdir(parents=True, exist_ok=True)
         accepted: List[str] = []
@@ -156,8 +170,10 @@ class Crawler:
         )
 
         for i, title in enumerate(start_titles, 1):
+            if interrupt is not None:
+                interrupt()
             ok, _ = self._process_single(title, gating_prompt)
-            _, linked = self._process_linked(title, gating_prompt)
+            _, linked = self._process_linked(title, gating_prompt, interrupt)
             if ok:
                 accepted.append(title)
             accepted.extend(linked)

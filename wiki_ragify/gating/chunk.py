@@ -132,6 +132,7 @@ def gate_files(
     config: Config,
     evaluator: Client,
     on_event: Callable[[ProgressEvent], None] | None = None,
+    interrupt: Callable[[], None] = None,
 ) -> None:
     """Gate every ``*.md`` artifact in ``source_dir``, moving accept/reject.
 
@@ -141,6 +142,8 @@ def gate_files(
     logger.info(f"Chunk-gating {len(files)} file(s) from {source_dir.name}")
 
     for i, path in enumerate(files, 1):
+        if interrupt is not None:
+            interrupt()
         decision = process_article(path, gating_prompt, evaluator)
         move_article(path, decision, source_dir)
         kind = "accept" if decision else "reject"

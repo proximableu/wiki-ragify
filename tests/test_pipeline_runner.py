@@ -287,7 +287,7 @@ def test_full_pipeline_end_to_end(tmp_path, prompt_file, config, monkeypatch):
 
     _build_db = _install_stub_modules(monkeypatch, fetcher)
 
-    def fake_build_db(accepted_dir, db_path, cfg, embed_client=None, on_event=None):
+    def fake_build_db(accepted_dir, db_path, cfg, embed_client=None, on_event=None, interrupt=None):
         runner.ran_ingest = True
         assert accepted_dir.exists()
         assert list(accepted_dir.glob("*.md"))
@@ -452,6 +452,54 @@ def test_stop_during_crawl_exits_before_ingest(tmp_path, prompt_file, config, mo
     seen = [e.stage for e in events]
     assert "crawl" in seen
     assert not any(s in ("split", "gate", "archive", "ingest") for s in seen)
+
+
+def test_stop_during_gate_halts_and_leaves_phase_rerunnable(tmp_path, prompt_file, config, monkeypatch):
+    """A stop signal set mid-gate-file-loop exits cleanly: the gate phase is left
+    *incomplete* (so a resumed run re-gates rather than skipping), and nothing past
+    it (archive, ingest) runs."""
+    events: list = []
+    fetcher = _seeded_fetcher(config)
+    evaluator = FakeEvaluator()
+    embed = FakeEmbedClient()
+    runner = FakePipelineRunner(config, _make_pipeline(tmp_path, prompt_file), fetcher, evaluator, embed, events)
+
+    def stop_on_first_chunk(text, prompt):
+        # Fire stop on the very first chunk-gate decision.
+        runner.stop()
+
+    # Route the chunk gate through the real gate_files with the runner's interrupt
+    # hook active; have it request a stop on the first chunk so we exercise the
+    # between-iterations interrupt path in gate_files (not just the phase-boundary check).
+    from wiki_ragify.gating import chunk as chunk_module
+
+    real_process = chunk_module.process_article
+
+    def stop_process(path, gating_prompt, evaluator, model="", num_ctx=0, think=False):
+        if real_process(path, gating_prompt, evaluator, model, num_ctx, think):
+            runner.stop()
+        return False
+
+    chunk_module.process_article = stop_process
+
+    _build_db = _install_stub_modules(monkeypatch, fetcher)
+    setattr(_build_db, "build_db", lambda *a, **k: (_ for _ in ()).throw(AssertionError("ingest must not run after stop")))
+
+    runner.run()
+
+    chunk_module.process_article = real_process
+
+    # Gate interrupted before draining its files => the gate phase is NOT marked
+    # complete, so a re-run will re-gate safely (safe default).
+    assert not runner.state.is_phase_complete("phase_4_gate")
+    assert not runner.ran_ingest
+    assert not runner.state.is_phase_complete("phase_5_archive")
+    seen = [e.stage for e in events]
+    # The gate started but archive never began, and neither ingest's warn nor its
+    # stage_done ever fired.
+    assert "gate" in seen
+    assert not any(s == "archive" for s in seen)
+    assert not any(s == "ingest" for s in seen)
 
 
 def test_resumption_skips_completed_phases(tmp_path, prompt_file, config, monkeypatch):
