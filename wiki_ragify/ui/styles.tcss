@@ -217,6 +217,10 @@ Screen {
     color: #ffffff;
 }
 
+#config-screen #no-db {
+    width: auto;
+}
+
 #config-screen #confirm {
     background: #2f9e44;
     color: #ffffff;

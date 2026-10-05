@@ -29,7 +29,7 @@ from typing import Optional
 from textual.app import App, ComposeResult, Screen
 from textual.containers import Container
 from textual.message import Message
-from textual.widgets import Button, DataTable, Header, Input, Static
+from textual.widgets import Button, DataTable, Header, Input, Static, Switch
 
 from ..config import Config, PipelineConfig, db_titlepath
 from ..pipeline.checkpoint import State
@@ -46,11 +46,14 @@ from .widgets.query_box import QueryBox, QueryRow, Submitted, build_rows, run_qu
 class ConfigResult(Message):
     """Carries the confirmed start page + prompt path + output dir out of ``ConfigScreen``."""
 
-    def __init__(self, start_page: str, prompt_path: str, output_dir: Path) -> None:
+    def __init__(self, start_page: str, prompt_path: str, output_dir: Path, ingest: bool) -> None:
         super().__init__()
         self.start_page = start_page
         self.prompt_path = Path(prompt_path)
         self.output_dir = Path(output_dir)
+        # ingest=True (default) builds the vector DB as phase 6; ingest=False (the
+        # "do not create database" checkbox) skips it.
+        self.ingest = ingest
 
 
 class PromptGenerated(Message):
@@ -111,6 +114,8 @@ class ConfigScreen(Screen):
         yield Static("Explicitly exclude:")
         yield Input(id="exclude-topic", placeholder="e.g. violence, code")
         yield Button("Generate", id="generate-prompt")
+        yield Static("Do not create the query database:")
+        yield Switch(id="no-db", value=False)
         yield Container(Button("Confirm", id="confirm"), Button("Cancel", id="cancel"), id="config-actions")
 
     async def on_mount(self) -> None:  # pragma: no cover - Textual lifecycle
@@ -213,7 +218,9 @@ class ConfigScreen(Screen):
             warn.update("⚠  Gating prompt file does not exist")
             return
         warn.update("")
-        self.post_message(ConfigResult(start_page, str(prompt_p), out_path))
+        # The "do not create database" switch: when on, skip phase 6 (embed/DB build).
+        create_db = not self.query_one("#no-db", Switch).value
+        self.post_message(ConfigResult(start_page, str(prompt_p), out_path, create_db))
         self.app.pop_screen()
 
 
@@ -284,6 +291,8 @@ class WikiRagifyApp(App):
         self._config_start_page: Optional[str] = None
         self._config_prompt_path: Optional[str] = None
         self._config_output_dir: Optional[Path] = None
+        # Whether this run should build the query DB (phase 6). Set by CONFIG.
+        self._config_create_db: bool = True
         # idle | running | paused | stopped
         self._run_state = "idle"
 
@@ -467,7 +476,7 @@ class WikiRagifyApp(App):
             start_page=self._config_start_page,
             prompt_path=self._config_prompt_path,
             output_dir=self._config_output_dir,
-            ingest=True,
+            ingest=self._config_create_db,
         )
 
     def _on_config_result(self, message: ConfigResult | ConfigCancelled) -> None:
@@ -479,6 +488,7 @@ class WikiRagifyApp(App):
             self._config_start_page = message.start_page
             self._config_prompt_path = message.prompt_path
             self._config_output_dir = message.output_dir
+            self._config_create_db = message.ingest
             self._run_state = "idle"
             # Bind the configured output dir so checkpoints, artifacts, and the query
             # store all resolve against it.
