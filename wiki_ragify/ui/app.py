@@ -29,7 +29,7 @@ from typing import Optional
 from textual.app import App, ComposeResult, Screen
 from textual.containers import Container
 from textual.message import Message
-from textual.widgets import Button, DataTable, Header, Input, Static, Switch
+from textual.widgets import Button, DataTable, Header, Input, Static, Switch, TextArea
 
 from ..config import Config, PipelineConfig, db_titlepath
 from ..pipeline.checkpoint import State
@@ -110,9 +110,9 @@ class ConfigScreen(Screen):
         yield Input(value=str(self._output_root), id="output-dir")
         yield Static("", id="output-warning")
         yield Static("Target topic (used to generate a gating prompt):")
-        yield Input(id="target-topic", placeholder="e.g. autism acceptance")
+        yield TextArea(id="target-topic", placeholder="e.g. autism acceptance", soft_wrap=True)
         yield Static("Explicitly exclude:")
-        yield Input(id="exclude-topic", placeholder="e.g. violence, code")
+        yield TextArea(id="exclude-topic", placeholder="e.g. violence, code", soft_wrap=True)
         yield Button("Generate", id="generate-prompt")
         yield Static("Do not create the query database:")
         yield Switch(id="no-db", value=False)
@@ -143,8 +143,8 @@ class ConfigScreen(Screen):
         field is prefilled when it was left empty. An empty target topic is a no-op
         with an inline warning.
         """
-        topic = self.query_one("#target-topic", Input).value.strip()
-        exclude = self.query_one("#exclude-topic", Input).value.strip()
+        topic = self.query_one("#target-topic", TextArea).text.strip()
+        exclude = self.query_one("#exclude-topic", TextArea).text.strip()
         warn = self.query_one("#output-warning", Static)
         if not topic:
             warn.update("⚠  Target topic is required to generate a prompt")
@@ -196,7 +196,7 @@ class ConfigScreen(Screen):
         """
         if prompt_path.strip():
             return Path(prompt_path).expanduser()
-        stem = db_titlepath(self.query_one("#target-topic", Input).value.strip() or "gate").removesuffix(".db")
+        stem = db_titlepath(self.query_one("#target-topic", TextArea).text.strip() or "gate").removesuffix(".db")
         return output_dir / "prompts" / f"{stem}.txt"
 
     def _submit(self) -> None:  # pragma: no cover - Textual modal

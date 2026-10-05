@@ -46,8 +46,8 @@ async def _test_generate_writes_and_prefills(tmp_path, monkeypatch):
     async with app.run_test() as pilot:
         app.push_screen(ConfigScreen(output_root=str(app.root), config=app.config))
         await pilot.pause()
-        app.screen.query_one("#target-topic").value = "autistic supremacism"
-        app.screen.query_one("#exclude-topic").value = "violence"
+        app.screen.query_one("#target-topic").text = "autistic supremacism"
+        app.screen.query_one("#exclude-topic").text = "violence"
         app.screen.query_one("#generate-prompt").press()
         for _ in range(10):
             await pilot.pause()
@@ -67,7 +67,7 @@ async def _test_generate_overwrites(tmp_path, monkeypatch):
     async with app.run_test() as pilot:
         app.push_screen(ConfigScreen(output_root=str(app.root), prompt_path=str(explicit), config=app.config))
         await pilot.pause()
-        app.screen.query_one("#target-topic").value = "topic"
+        app.screen.query_one("#target-topic").text = "topic"
         app.screen.query_one("#generate-prompt").press()
         for _ in range(10):
             await pilot.pause()

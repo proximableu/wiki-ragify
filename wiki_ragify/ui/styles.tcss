@@ -202,19 +202,31 @@ Screen {
     align-horizontal: center;
 }
 
-#config-screen #target-topic,
-#config-screen #exclude-topic {
-    width: 20;
+#config-screen #target-topic TextArea {
+    width: 1fr;
+    height: 8;
+}
+
+#config-screen #exclude-topic TextArea {
+    width: 1fr;
+    height: 3;
 }
 
 #config-screen #generate-prompt {
     margin: 0 0 1 0;
     background: #2f9e44;
     color: #ffffff;
+    dock: right;
 }
 
 #config-screen #no-db {
-    width: auto;
+    background: #bdbdbd;
+    color: #bdbdbd;
+}
+
+#config-screen #no-db.-on {
+    background: #2f9e44;
+    color: #2f9e44;
 }
 
 #config-screen #confirm {
