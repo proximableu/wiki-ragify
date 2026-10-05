@@ -239,7 +239,8 @@ Screen {
     color: #ffffff;
 }
 
-#config-screen Input {
-    background: #1b1b1b;
+#config-screen Input,
+#config-screen TextArea {
+    background: #b8860b; /* dark yellow */
     color: #e6e6e6;
 }
