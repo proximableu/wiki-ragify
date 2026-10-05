@@ -47,7 +47,7 @@ class LogLine:
 def render_line(event: ProgressEvent) -> LogLine:
     """Turn a :class:`ProgressEvent` into a ``(text, style)`` log line (pure)."""
     style = EventLog.classify(event.kind)
-    if event.total is not None and event.index:
+    if event.total is not None and event.index is not None:
         prefix = f"[{event.index}/{event.total}] "
         text = f"{prefix}{event.message}".strip()
     else:
@@ -99,7 +99,7 @@ def render_banner(
     ``phases_done / phases_total`` (a checkpoint / idle window). ``rate`` is only meaningful
     while a stage is actively advancing.
     """
-    if total and index:
+    if index is not None and total:
         frac = index / total
         remaining = max(0, total - index)
         eta = eta_str(remaining, rate)
@@ -181,7 +181,7 @@ class ProgressPanel(Container):
         self._log.add_event(event)
         self.current_stage = event.stage
 
-        if event.total is not None and event.index:
+        if event.total is not None and event.index is not None:
             if event.stage != self._stage_track:
                 # New stage: start counting its rate from scratch.
                 self._stage_track = event.stage
