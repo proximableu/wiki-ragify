@@ -123,11 +123,14 @@ class ProgressLog(RichLog):
     def add_event(self, event: ProgressEvent) -> None:
         """Append a ProgressEvent to the log (safe to call from any thread)."""
         self._eventlog.append(event)
+        # The per-[LINK] crawl bookkeeping rows are hidden from the panel.
+        if EventLog._is_link_tick(getattr(event, "message", "")):
+            return
         self._write_line(render_line(event))
 
     def clear(self) -> None:
         self._eventlog.clear()
-        self.clear()
+        super().clear()
 
     def _write_line(self, line: LogLine) -> None:  # pragma: no cover - Textual render
         self.write(f"[{line.style}]{line.text}[/]")

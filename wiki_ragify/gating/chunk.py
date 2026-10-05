@@ -66,7 +66,13 @@ def has_insufficient_sentences(path: Path) -> bool:
     ``nltk.sent_tokenize`` — articles with fewer than two sentences are skipped
     (rejected) so the LLM is not wasted on noise.
     """
-    from nltk import sent_tokenize
+    try:
+        from nltk import sent_tokenize
+    except ModuleNotFoundError:
+        raise RuntimeError(
+            "nltk is required for sentence tokenization in the chunk gate; "
+            "install it with `pip install nltk` (also `nltk download punkt`)."
+        ) from None
 
     if path.suffix != ".md":
         return False

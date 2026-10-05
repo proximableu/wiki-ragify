@@ -20,12 +20,12 @@ def _log(*events):
 
 
 def test_classify_maps_kind_to_style():
-    assert EventLog.classify("accept") == "accent2"
-    assert EventLog.classify("reject") == "error"
-    assert EventLog.classify("skip") == "subtle"
-    assert EventLog.classify("warn") == "warning"
-    # unknown kind falls back to neutral info
-    assert EventLog.classify("weird") == "primary"
+    assert EventLog.classify("accept") == "cyan"
+    assert EventLog.classify("reject") == "magenta"
+    assert EventLog.classify("skip") == "yellow"
+    assert EventLog.classify("warn") == "yellow"
+    # unknown kind falls back to neutral (dim) info
+    assert EventLog.classify("weird") == "dim"
 
 
 def test_append_keeps_newest_first_and_wraps_at_max():
@@ -52,8 +52,8 @@ def test_append_records_style_and_index():
         _event("gate", "reject", "B", index=2, total=2),
     )
     rows = log.rows()
-    assert rows[0] == LogRow("[2/2] B", "error", 2)
-    assert rows[1] == LogRow("[1/2] A", "accent2", 1)
+    assert rows[0] == LogRow("[2/2] B", "magenta", 2)
+    assert rows[1] == LogRow("[1/2] A", "cyan", 1)
 
 
 def test_clear_removes_all_rows():
@@ -64,4 +64,4 @@ def test_clear_removes_all_rows():
 
 def test_classify_is_constant():
     # guard against accidental refactor: stage_done is a distinct bright style
-    assert EventLog.classify("stage_done") == "success"
+    assert EventLog.classify("stage_done") == "bold"

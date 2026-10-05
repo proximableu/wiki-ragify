@@ -15,14 +15,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
-# Log-row styles. Kept in sync with the palette in styles.tcss.
-STYLE_ACCEPT = "accent2"   # green-ish
-STYLE_REJECT = "error"      # red
-STYLE_SKIP = "subtle"       # dim
-STYLE_INFO = "primary"      # neutral
-STYLE_WARN = "warning"      # yellow
-STYLE_TICK = "subtle"       # dim (bookkeeping ticks)
-STYLE_DONE = "success"      # bright
+# Log-row styles. These are Rich markup tokens (the panel emits ``[style]text[/]``),
+# not Textual CSS class names. ``dim`` renders as a bold-dim muted row.
+STYLE_INFO = "dim"   # neutral / fallback
 
 
 @dataclass(frozen=True)
@@ -50,25 +45,18 @@ class EventLog:
     def classify(kind: str, stage: str = "") -> str:
         """Map an event kind to a colour style.
 
+        The whole funnel shares one palette — accept is cyan, reject is magenta,
+        skip/warn are yellow, bookkeeping (info/tick) is dim, stage_done is bold.
         Falls back to ``info`` for any unexpected kind so the log never looks broken.
-        Crawl (article-level, Gate 1) decisions are colourised distinctly:
-        accept is cyan, reject is magenta, skip is yellow. Everything else keeps
-        the chunk-gate palette (green accept, red reject, muted skip/info).
         """
-        if stage == "crawl":
-            return {
-                "accept": "cyan",
-                "reject": "magenta",
-                "skip": "yellow",
-            }.get(kind, STYLE_INFO)
         return {
-            "accept": STYLE_ACCEPT,
-            "reject": STYLE_REJECT,
-            "skip": STYLE_SKIP,
-            "info": STYLE_INFO,
-            "warn": STYLE_WARN,
-            "tick": STYLE_TICK,
-            "stage_done": STYLE_DONE,
+            "accept": "cyan",
+            "reject": "magenta",
+            "skip": "yellow",
+            "warn": "yellow",
+            "tick": "dim",
+            "info": "dim",
+            "stage_done": "bold",
         }.get(kind, STYLE_INFO)
 
     @staticmethod
