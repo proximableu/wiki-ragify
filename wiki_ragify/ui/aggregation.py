@@ -106,9 +106,9 @@ GATE2_REJECT_LABEL = "gate2_reject"
 EMBEDDINGS_LABEL = "embeddings"
 DEDUP_REMOVED_LABEL = "dedup_removed"
 DB_ROWS_LABEL = "db rows"
-ELAPSED_LABEL = "elapsed"
-CRAWL_RATE_LABEL = "crawl_rate"
-GATE_RATE_LABEL = "gate_rate"
+ELAPSED_LABEL = "elapsed (s)"
+CRAWL_RATE_LABEL = "crawl_rate (pages/min)"
+GATE_RATE_LABEL = "gate_rate (chunks/min)"
 
 
 @dataclass

@@ -1,0 +1,1854 @@
+A prior probability distribution (often simply called the prior probability, prior distribution, or prior) of an uncertain quantity is its assumed probability distribution before evidence is taken into account. For example, the prior could be the probability distribution representing the relative proportions of voters who will vote for a particular politician in a future election. The unknown quantity may be a parameter of the model or a latent variable rather than an observable variable.
+In Bayesian statistics, Bayes' rule prescribes how to update the prior with new information to obtain the posterior probability distribution, which is the conditional distribution of the uncertain quantity given new data. Historically, the choice of priors was often constrained to a conjugate family of a given likelihood function, so that it would result in a tractable posterior of the same family. The widespread availability of Markov chain Monte Carlo methods, however, has made this less of a concern.
+There are many ways to construct a prior distribution. In some cases, a prior may be determined from past information, such as previous experiments. A prior can also be elicited from the purely subjective assessment of an experienced expert. When no information is available, an uninformative prior may be adopted as justified by the principle of indifference. In modern applications, priors are also often chosen for their mechanical properties, such as regularization and feature selection.
+The prior distributions of model parameters will often depend on parameters of their own. Uncertainty about these hyperparameters can, in turn, be expressed as hyperprior probability distributions. For example, if one uses a beta distribution to model the distribution of the parameter p of a Bernoulli distribution, then:
+
+p is a parameter of the underlying system (Bernoulli distribution), and
+α and β are parameters of the prior distribution (beta distribution); hence hyperparameters.
+In principle, priors can be decomposed into many conditional levels of distributions, so-called hierarchical priors.
+
+
+== Informative priors ==
+An informative prior expresses specific, definite information about a variable.
+An example is a prior distribution for the temperature at noon tomorrow.
+A reasonable approach is to make the prior a normal distribution with expected value equal to today's noontime temperature, with variance equal to the day-to-day variance of atmospheric temperature,
+or a distribution of the temperature for that day of the year.
+This example has a property in common with many priors, namely, that the posterior from one problem (today's temperature) becomes the prior for another problem (tomorrow's temperature); pre-existing evidence which has already been taken into account is part of the prior and, as more evidence accumulates, the posterior is determined largely by the evidence rather than any original assumption, provided that the original assumption admitted the possibility of what the evidence is suggesting. The terms "prior" and "posterior" are generally relative to a specific datum or observation.
+
+
+=== Strong prior ===
+A strong prior is a preceding assumption, theory, concept or idea upon which, after taking account of new information, a current assumption, theory, concept or idea is founded. A strong prior is a type of informative prior in which the information contained in the prior distribution dominates the information contained in the data being analyzed. The Bayesian analysis combines the information contained in the prior with that extracted from the data to produce the posterior distribution which, in the case of a "strong prior", would be little changed from the prior distribution.
+
+
+== Weakly informative priors ==
+A weakly informative prior expresses partial information about a variable, steering the analysis toward solutions that align with existing knowledge without overly constraining the results and preventing extreme estimates. An example is, when setting the prior distribution for the temperature at noon tomorrow in St. Louis, to use a normal distribution with mean 50 degrees Fahrenheit and standard deviation 40 degrees, which very loosely constrains the temperature to the range (10 degrees, 90 degrees) with a small chance of being below -30 degrees or above 130 degrees.  The purpose of a weakly informative prior is for regularization, that is, to keep inferences in a reasonable range.
+
+
+== Uninformative priors ==
+An uninformative, flat, or diffuse prior expresses vague or general information about a variable. The term "uninformative prior" is somewhat of a misnomer. Such a prior might also be called a not very informative prior, or an objective prior, i.e., one that is not subjectively elicited.
+Uninformative priors can express "objective" information such as "the variable is positive" or "the variable is less than some limit". The simplest and oldest rule for determining a non-informative prior is the principle of indifference, which assigns equal probabilities to all possibilities. In parameter estimation problems, the use of an uninformative prior typically yields results which are not too different from conventional statistical analysis, as the likelihood function often yields more information than the uninformative prior.
+Some attempts have been made at finding a priori probabilities, i.e., probability distributions in some sense logically required by the nature of one's state of uncertainty; these are a subject of philosophical controversy, with Bayesians being roughly divided into two schools: "objective Bayesians", who believe such priors exist in many useful situations, and "subjective Bayesians" who believe that in practice priors usually represent subjective judgements of opinion that cannot be rigorously justified (Williamson 2010).  Perhaps the strongest arguments for objective Bayesianism were given by Edwin T. Jaynes, based mainly on the consequences of symmetries and on the principle of maximum entropy.
+As an example of an a priori prior, due to Jaynes (2003), consider a situation in which one knows a ball has been hidden under one of three cups, A, B, or C, but no other information is available about its location.  In this case a uniform prior of p(A) = p(B) = p(C) = 1/3 seems intuitively like the only reasonable choice.  More formally, we can see that the problem remains the same if we swap around the labels ("A", "B" and "C") of the cups.  It would therefore be odd to choose a prior for which a permutation of the labels would cause a change in our predictions about which cup the ball will be found under; the uniform prior is the only one which preserves this invariance.  If one accepts this invariance principle then one can see that the uniform prior is the logically correct prior to represent this state of knowledge. This prior is "objective" in the sense of being the correct choice to represent a particular state of knowledge, but it is not objective in the sense of being an observer-independent feature of the world: in reality the ball exists under a particular cup, and it only makes sense to speak of probabilities in this situation if there is an observer with limited knowledge about the system.
+As a more contentious example, Jaynes published an argument based on the invariance of the prior under a change of parameters that suggests that the prior representing complete uncertainty about a probability should be the Haldane prior p−1(1 − p)−1.  The example Jaynes gives is of finding a chemical in a lab and asking whether it will dissolve in water in repeated experiments.  The Haldane prior gives by far the most weight to 
+  
+    
+      
+        p
+        =
+        0
+      
+    
+    {\displaystyle p=0}
+  
+ and 
+  
+    
+      
+        p
+        =
+        1
+      
+    
+    {\displaystyle p=1}
+  
+, indicating that the sample will either dissolve every time or never dissolve, with equal probability.  However, if one has observed samples of the chemical to dissolve in one experiment and not to dissolve in another experiment then this prior is updated to the uniform distribution on the interval [0, 1].  This is obtained by applying Bayes' theorem to the data set consisting of one observation of dissolving and one of not dissolving, using the above prior.  The Haldane prior is an improper prior distribution (meaning that it has an infinite mass).  Harold Jeffreys devised a systematic way for designing uninformative priors as e.g., Jeffreys prior p−1/2(1 − p)−1/2 for the Bernoulli random variable.
+Priors can be constructed which are proportional to the Haar measure if the parameter space X carries a natural group structure which leaves invariant our Bayesian state of knowledge. This can be seen as a generalisation of the invariance principle used to justify the uniform prior over the three cups in the example above.  For example, in physics we might expect that an experiment will give the same results regardless of our choice of the origin of a coordinate system. This induces the group structure of the translation group on X, which determines the prior probability as a constant improper prior. Similarly, some measurements are naturally invariant to the choice of an arbitrary scale (e.g., whether centimeters or inches are used, the physical results should be equal). In such a case, the scale group is the natural group structure, and the corresponding prior on X is proportional to 1/x. It sometimes matters whether we use the left-invariant or right-invariant Haar measure. For example, the left and right invariant Haar measures on the affine group are not equal. Berger (1985, p. 413) argues that the right-invariant Haar measure is the correct choice.
+Another idea, championed by Edwin T. Jaynes, is to use the principle of maximum entropy (MAXENT). The motivation is that the Shannon entropy of a probability distribution measures the amount of information contained in the distribution. The larger the entropy, the less information is provided by the distribution. Thus, by maximizing the entropy over a suitable set of probability distributions on X, one finds the distribution that is least informative in the sense that it contains the least amount of information consistent with the constraints that define the set. For example, the maximum entropy prior on a discrete space, given only that the probability is normalized to 1, is the prior that assigns equal probability to each state. And in the continuous case, the maximum entropy prior given that the density is normalized with mean zero and unit variance is the standard normal distribution.  The principle of minimum cross-entropy generalizes MAXENT to the case of "updating" an arbitrary prior distribution with suitable constraints in the maximum-entropy sense.
+A related idea, reference priors, was introduced by José-Miguel Bernardo. Here, the idea is to maximize the expected Kullback–Leibler divergence of the posterior distribution relative to the prior. This maximizes the expected posterior information about X when the prior density is p(x); thus, in some sense, p(x) is the "least informative" prior about X. The reference prior is defined in the asymptotic limit, i.e., one considers the limit of the priors so obtained as the number of data points goes to infinity.  In the present case, the KL divergence between the prior and posterior distributions is given by
+
+  
+    
+      
+        K
+        L
+        =
+        ∫
+        p
+        (
+        t
+        )
+        ∫
+        p
+        (
+        x
+        ∣
+        t
+        )
+        log
+        ⁡
+        
+          
+            
+              p
+              (
+              x
+              ∣
+              t
+              )
+            
+            
+              p
+              (
+              x
+              )
+            
+          
+        
+        
+        d
+        x
+        
+        d
+        t
+      
+    
+    {\displaystyle KL=\int p(t)\int p(x\mid t)\log {\frac {p(x\mid t)}{p(x)}}\,dx\,dt}
+  
+
+Here, 
+  
+    
+      
+        t
+      
+    
+    {\displaystyle t}
+  
+ is a sufficient statistic for some parameter 
+  
+    
+      
+        x
+      
+    
+    {\displaystyle x}
+  
+.  The inner integral is the KL divergence between the posterior 
+  
+    
+      
+        p
+        (
+        x
+        ∣
+        t
+        )
+      
+    
+    {\displaystyle p(x\mid t)}
+  
+ and prior 
+  
+    
+      
+        p
+        (
+        x
+        )
+      
+    
+    {\displaystyle p(x)}
+  
+ distributions and the result is the weighted mean over all values of 
+  
+    
+      
+        t
+      
+    
+    {\displaystyle t}
+  
+.   Splitting the logarithm into two parts, reversing the order of integrals in the second part and noting that 
+  
+    
+      
+        log
+        
+        [
+        p
+        (
+        x
+        )
+        ]
+      
+    
+    {\displaystyle \log \,[p(x)]}
+  
+ does not depend on 
+  
+    
+      
+        t
+      
+    
+    {\displaystyle t}
+  
+ yields
+
+  
+    
+      
+        K
+        L
+        =
+        ∫
+        p
+        (
+        t
+        )
+        ∫
+        p
+        (
+        x
+        ∣
+        t
+        )
+        log
+        ⁡
+        [
+        p
+        (
+        x
+        ∣
+        t
+        )
+        ]
+        
+        d
+        x
+        
+        d
+        t
+        
+        −
+        
+        ∫
+        log
+        ⁡
+        [
+        p
+        (
+        x
+        )
+        ]
+        
+        ∫
+        p
+        (
+        t
+        )
+        p
+        (
+        x
+        ∣
+        t
+        )
+        
+        d
+        t
+        
+        d
+        x
+      
+    
+    {\displaystyle KL=\int p(t)\int p(x\mid t)\log[p(x\mid t)]\,dx\,dt\,-\,\int \log[p(x)]\,\int p(t)p(x\mid t)\,dt\,dx}
+  
+
+The inner integral in the second part is the integral over 
+  
+    
+      
+        t
+      
+    
+    {\displaystyle t}
+  
+ of the joint density 
+  
+    
+      
+        p
+        (
+        x
+        ,
+        t
+        )
+      
+    
+    {\displaystyle p(x,t)}
+  
+.  This is the marginal distribution 
+  
+    
+      
+        p
+        (
+        x
+        )
+      
+    
+    {\displaystyle p(x)}
+  
+, so we have
+
+  
+    
+      
+        K
+        L
+        =
+        ∫
+        p
+        (
+        t
+        )
+        ∫
+        p
+        (
+        x
+        ∣
+        t
+        )
+        log
+        ⁡
+        [
+        p
+        (
+        x
+        ∣
+        t
+        )
+        ]
+        
+        d
+        x
+        
+        d
+        t
+        
+        −
+        
+        ∫
+        p
+        (
+        x
+        )
+        log
+        ⁡
+        [
+        p
+        (
+        x
+        )
+        ]
+        
+        d
+        x
+      
+    
+    {\displaystyle KL=\int p(t)\int p(x\mid t)\log[p(x\mid t)]\,dx\,dt\,-\,\int p(x)\log[p(x)]\,dx}
+  
+
+Now we use the concept of entropy which, in the case of probability distributions, is the negative expected value of the logarithm of the probability mass or density function or 
+  
+    
+      
+        H
+        (
+        x
+        )
+        =
+        −
+        ∫
+        p
+        (
+        x
+        )
+        log
+        ⁡
+        [
+        p
+        (
+        x
+        )
+        ]
+        
+        d
+        x
+        .
+      
+    
+    {\textstyle H(x)=-\int p(x)\log[p(x)]\,dx.}
+  
+  Using this in the last equation yields
+
+  
+    
+      
+        K
+        L
+        =
+        −
+        ∫
+        p
+        (
+        t
+        )
+        H
+        (
+        x
+        ∣
+        t
+        )
+        
+        d
+        t
+        +
+        
+        H
+        (
+        x
+        )
+      
+    
+    {\displaystyle KL=-\int p(t)H(x\mid t)\,dt+\,H(x)}
+  
+
+In words, KL is the negative expected value over 
+  
+    
+      
+        t
+      
+    
+    {\displaystyle t}
+  
+ of the entropy of 
+  
+    
+      
+        x
+      
+    
+    {\displaystyle x}
+  
+ conditional on 
+  
+    
+      
+        t
+      
+    
+    {\displaystyle t}
+  
+ plus the marginal (i.e., unconditional) entropy of 
+  
+    
+      
+        x
+      
+    
+    {\displaystyle x}
+  
+.  In the limiting case where the sample size tends to infinity, the Bernstein-von Mises theorem states that the distribution of 
+  
+    
+      
+        x
+      
+    
+    {\displaystyle x}
+  
+ conditional on a given observed value of 
+  
+    
+      
+        t
+      
+    
+    {\displaystyle t}
+  
+ is normal with a variance equal to the reciprocal of the Fisher information at the 'true' value of 
+  
+    
+      
+        x
+      
+    
+    {\displaystyle x}
+  
+.  The entropy of a normal density function is equal to half the logarithm of 
+  
+    
+      
+        2
+        π
+        e
+        v
+      
+    
+    {\displaystyle 2\pi ev}
+  
+ where 
+  
+    
+      
+        v
+      
+    
+    {\displaystyle v}
+  
+ is the variance of the distribution.  In this case therefore 
+  
+    
+      
+        H
+        =
+        log
+        ⁡
+        
+          
+            
+              
+                2
+                π
+                e
+              
+              
+                N
+                I
+                (
+                
+                  x
+                  
+                    ∗
+                  
+                
+                )
+              
+            
+          
+        
+      
+    
+    {\displaystyle H=\log {\sqrt {\frac {2\pi e}{NI(x^{*})}}}}
+  
+ where 
+  
+    
+      
+        N
+      
+    
+    {\displaystyle N}
+  
+ is the arbitrarily large sample size (to which Fisher information is proportional) and 
+  
+    
+      
+        x
+        ∗
+      
+    
+    {\displaystyle x*}
+  
+ is the 'true' value.  Since this does not depend on 
+  
+    
+      
+        t
+      
+    
+    {\displaystyle t}
+  
+ it can be taken out of the integral, and as this integral is over a probability space it equals one.  Hence we can write the asymptotic form of KL as
+
+  
+    
+      
+        K
+        L
+        =
+        −
+        log
+        ⁡
+        
+          (
+          
+            1
+            
+              
+                k
+                I
+                (
+                
+                  x
+                  
+                    ∗
+                  
+                
+                )
+              
+            
+          
+          )
+        
+        −
+        
+        ∫
+        p
+        (
+        x
+        )
+        log
+        ⁡
+        [
+        p
+        (
+        x
+        )
+        ]
+        
+        d
+        x
+      
+    
+    {\displaystyle KL=-\log \left(1{\sqrt {kI(x^{*})}}\right)-\,\int p(x)\log[p(x)]\,dx}
+  
+
+where 
+  
+    
+      
+        k
+      
+    
+    {\displaystyle k}
+  
+ is proportional to the (asymptotically large) sample size.  We do not know the value of 
+  
+    
+      
+        x
+        ∗
+      
+    
+    {\displaystyle x*}
+  
+.  Indeed, the very idea goes against the philosophy of Bayesian inference in which 'true' values of parameters are replaced by prior and posterior distributions.  So we remove 
+  
+    
+      
+        x
+        ∗
+      
+    
+    {\displaystyle x*}
+  
+ by replacing it with 
+  
+    
+      
+        x
+      
+    
+    {\displaystyle x}
+  
+ and taking the expected value of the normal entropy, which we obtain by multiplying by 
+  
+    
+      
+        p
+        (
+        x
+        )
+      
+    
+    {\displaystyle p(x)}
+  
+ and integrating over 
+  
+    
+      
+        x
+      
+    
+    {\displaystyle x}
+  
+.  This allows us to combine the logarithms yielding
+
+  
+    
+      
+        K
+        L
+        =
+        −
+        ∫
+        p
+        (
+        x
+        )
+        log
+        ⁡
+        
+          [
+          
+            
+              
+                p
+                (
+                x
+                )
+              
+              
+                k
+                I
+                (
+                x
+                )
+              
+            
+          
+          ]
+        
+        
+        d
+        x
+      
+    
+    {\displaystyle KL=-\int p(x)\log \left[{\frac {p(x)}{\sqrt {kI(x)}}}\right]\,dx}
+  
+
+This is a quasi-KL divergence ("quasi" in the sense that the square root of the Fisher information may be the kernel of an improper distribution).  Due to the minus sign, we need to minimise this in order to maximise the KL divergence with which we started.  The minimum value of the last equation occurs where the two distributions in the logarithm argument, improper or not, do not diverge.  This in turn occurs when the prior distribution is proportional to the square root of the Fisher information of the likelihood function.  Hence in the single parameter case, reference priors and Jeffreys priors are identical, even though Jeffreys has a very different rationale.
+Reference priors are often the objective prior of choice in multivariate problems, since other rules (e.g., Jeffreys' rule) may result in priors with problematic behavior.
+Objective prior distributions may also be derived from other principles, such as information or coding theory (see e.g., minimum description length) or frequentist statistics (so-called probability matching priors). Such methods are used in Solomonoff's theory of inductive inference. Constructing objective priors have been recently introduced in bioinformatics, and specially inference in cancer systems biology, where sample size is limited and a vast amount of prior knowledge is available. In these methods, either an information theory based criterion, such as KL divergence or log-likelihood function for binary supervised learning problems and mixture model problems.
+Philosophical problems associated with uninformative priors are associated with the choice of an appropriate metric, or measurement scale. Suppose we want a prior for the running speed of a runner who is unknown to us. We could specify, say, a normal distribution as the prior for his speed, but alternatively we could specify a normal prior for the time he takes to complete 100 metres, which is proportional to the reciprocal of the first prior. These are very different priors, but it is not clear which is to be preferred.  Jaynes' method of transformation groups can answer this question in some situations.
+Similarly, if asked to estimate an unknown proportion between 0 and 1, we might say that all proportions are equally likely, and use a uniform prior. Alternatively, we might say that all orders of magnitude for the proportion are equally likely, the logarithmic prior, which is the uniform prior on the logarithm of proportion. The Jeffreys prior attempts to solve this problem by computing a prior which expresses the same belief no matter which metric is used. The Jeffreys prior for an unknown proportion p is p−1/2(1 − p)−1/2, which differs from Jaynes' recommendation.
+Priors based on notions of algorithmic probability are used in inductive inference as a basis for induction in very general settings.
+Practical problems associated with uninformative priors include the requirement that the posterior distribution be proper. The usual uninformative priors on continuous, unbounded variables are improper. This need not be a problem if the posterior distribution is proper. Another issue of importance is that if an uninformative prior is to be used routinely, i.e., with many different data sets, it should have good frequentist properties. Normally a Bayesian would not be concerned with such issues, but it can be important in this situation. For example, one would want any decision rule based on the posterior distribution to be admissible under the adopted loss function. Admissibility is often difficult to check, although some results are known (e.g., Berger and Strawderman 1996). The issue is particularly acute with hierarchical Bayes models; the usual priors (e.g., Jeffreys' prior) may give badly inadmissible decision rules if employed at the higher levels of the hierarchy.
+
+
+== Improper priors ==
+Let events 
+  
+    
+      
+        
+          A
+          
+            1
+          
+        
+        ,
+        
+          A
+          
+            2
+          
+        
+        ,
+        …
+        ,
+        
+          A
+          
+            n
+          
+        
+      
+    
+    {\displaystyle A_{1},A_{2},\ldots ,A_{n}}
+  
+ be mutually exclusive and exhaustive. If Bayes' theorem is written as
+
+  
+    
+      
+        P
+        (
+        
+          A
+          
+            i
+          
+        
+        ∣
+        B
+        )
+        =
+        
+          
+            
+              P
+              (
+              B
+              ∣
+              
+                A
+                
+                  i
+                
+              
+              )
+              P
+              (
+              
+                A
+                
+                  i
+                
+              
+              )
+            
+            
+              
+                ∑
+                
+                  j
+                
+              
+              P
+              (
+              B
+              ∣
+              
+                A
+                
+                  j
+                
+              
+              )
+              P
+              (
+              
+                A
+                
+                  j
+                
+              
+              )
+            
+          
+        
+        
+        ,
+      
+    
+    {\displaystyle P(A_{i}\mid B)={\frac {P(B\mid A_{i})P(A_{i})}{\sum _{j}P(B\mid A_{j})P(A_{j})}}\,,}
+  
+
+then it is clear that the same result would be obtained if all the prior probabilities P(Ai) and P(Aj) were multiplied by a given constant; the same would be true for a continuous random variable.  If the summation in the denominator converges, the posterior probabilities will still sum (or integrate) to 1 even if the prior values do not, and so the priors may only need to be specified in the correct proportion. Taking this idea further, in many cases the sum or integral of the prior values may not even need to be finite to get sensible answers for the posterior probabilities.  When this is the case, the prior is called an improper prior.  However, the posterior distribution need not be a proper distribution if the prior is improper. This is clear from the case where event B is independent of all of the Aj.
+Statisticians sometimes use improper priors as uninformative priors.  For example, if they need a prior distribution for the mean and variance of a random variable, they may assume p(m, v) ~ 1/v (for v > 0) which would suggest that any value for the mean is "equally likely" and that a value for the positive variance becomes "less likely" in inverse proportion to its value.  Many authors (Lindley, 1973; De Groot, 1937; Kass and Wasserman, 1996) warn against the danger of over-interpreting those priors since they are not probability densities. The only relevance they have is found in the corresponding posterior, as long as it is well-defined for all observations. (The Haldane prior is a typical counterexample.)
+By contrast, likelihood functions do not need to be integrated, and a likelihood function that is uniformly 1 corresponds to the absence of data (all models are equally likely, given no data): Bayes' rule multiplies a prior by the likelihood, and an empty product is just the constant likelihood 1. However, without starting with a prior probability distribution, one does not end up getting a posterior probability distribution, and thus cannot integrate or compute expected values or loss. See Likelihood function § Non-integrability for details.
+
+
+=== Examples ===
+Examples of improper priors include:
+
+The uniform distribution on an infinite interval (i.e., a half-line or the entire real line).
+Beta(0,0), the beta distribution for α=0, β=0 (uniform distribution on log-odds scale).
+The logarithmic prior on the positive reals (uniform distribution on log scale).
+These functions, interpreted as uniform distributions, can also be interpreted as the likelihood function in the absence of data, but are not proper priors.
+
+
+== Prior probability in statistical mechanics ==
+While in Bayesian statistics the prior probability is used to represent initial beliefs about an uncertain parameter, in statistical mechanics the a priori probability is used to describe the initial state of a system. The classical version is defined as the ratio of the number of elementary events (e.g., the number of times a die is thrown) to the total number of events—and these considered purely deductively, i.e., without any experimenting. In the case of the die if we look at it on the table without throwing it, each elementary event is reasoned deductively to have the same probability—thus the probability of each outcome of an imaginary throwing of the (perfect) die or simply by counting the number of faces is 1/6. Each face of the die appears with equal probability—probability being a measure defined for each elementary event. The result is different if we throw the die twenty times and ask how many times (out of 20) the number 6 appears on the upper face. In this case time comes into play and we have a different type of probability depending on time or the number of times the die is thrown. On the other hand, the a priori probability is independent of time—you can look at the die on the table as long as you like without touching it and you deduce the probability for the number 6 to appear on the upper face is 1/6.  
+In statistical mechanics, e.g., that of a gas contained in a finite volume 
+  
+    
+      
+        V
+      
+    
+    {\displaystyle V}
+  
+, both the spatial coordinates 
+  
+    
+      
+        
+          q
+          
+            i
+          
+        
+      
+    
+    {\displaystyle q_{i}}
+  
+ and the momentum coordinates 
+  
+    
+      
+        
+          p
+          
+            i
+          
+        
+      
+    
+    {\displaystyle p_{i}}
+  
+ of the individual gas elements (atoms or molecules) are finite in the phase space spanned by these coordinates. In analogy to the case of the die, the a priori probability is here (in the case of a continuum) proportional to the phase space volume element 
+  
+    
+      
+        Δ
+        q
+        Δ
+        p
+      
+    
+    {\displaystyle \Delta q\Delta p}
+  
+ divided by 
+  
+    
+      
+        h
+      
+    
+    {\displaystyle h}
+  
+, and is the number of standing waves (i.e., states) therein, where 
+  
+    
+      
+        Δ
+        q
+      
+    
+    {\displaystyle \Delta q}
+  
+ is the range of the variable 
+  
+    
+      
+        q
+      
+    
+    {\displaystyle q}
+  
+  and 
+  
+    
+      
+        Δ
+        p
+      
+    
+    {\displaystyle \Delta p}
+  
+ is the range of the variable 
+  
+    
+      
+        p
+      
+    
+    {\displaystyle p}
+  
+ (here for simplicity considered in one dimension). In 1 dimension (length 
+  
+    
+      
+        L
+      
+    
+    {\displaystyle L}
+  
+) this number or statistical weight or a priori weighting  is 
+  
+    
+      
+        L
+        Δ
+        p
+        
+          /
+        
+        h
+      
+    
+    {\displaystyle L\Delta p/h}
+  
+. In customary 3 dimensions (volume 
+  
+    
+      
+        V
+      
+    
+    {\displaystyle V}
+  
+) the corresponding number can be calculated to be 
+  
+    
+      
+        V
+        4
+        π
+        
+          p
+          
+            2
+          
+        
+        Δ
+        p
+        
+          /
+        
+        
+          h
+          
+            3
+          
+        
+      
+    
+    {\displaystyle V4\pi p^{2}\Delta p/h^{3}}
+  
+. In order to understand this quantity as giving a number of states in quantum (i.e., wave) mechanics, recall that in quantum mechanics every particle is associated with a matter wave which is the solution of a Schrödinger equation. In the case of free particles (of energy 
+  
+    
+      
+        ϵ
+        =
+        
+          
+            
+              p
+            
+          
+          
+            2
+          
+        
+        
+          /
+        
+        2
+        m
+      
+    
+    {\displaystyle \epsilon ={\bf {p}}^{2}/2m}
+  
+) like those of a gas in a box of volume 
+  
+    
+      
+        V
+        =
+        
+          L
+          
+            3
+          
+        
+      
+    
+    {\displaystyle V=L^{3}}
+  
+ such a matter wave is explicitly
+
+  
+    
+      
+        ψ
+        ∝
+        sin
+        ⁡
+        
+          
+            
+              l
+              π
+              x
+            
+            L
+          
+        
+        sin
+        ⁡
+        
+          
+            
+              m
+              π
+              y
+            
+            L
+          
+        
+        sin
+        ⁡
+        
+          
+            
+              n
+              π
+              z
+            
+            L
+          
+        
+        ,
+      
+    
+    {\displaystyle \psi \propto \sin {\frac {l\pi x}{L}}\sin {\frac {m\pi y}{L}}\sin {\frac {n\pi z}{L}},}
+  
+
+where 
+  
+    
+      
+        l
+        ,
+        m
+        ,
+        n
+      
+    
+    {\displaystyle l,m,n}
+  
+ are integers. The number of different  
+  
+    
+      
+        (
+        l
+        ,
+        m
+        ,
+        n
+        )
+      
+    
+    {\displaystyle (l,m,n)}
+  
+ values and hence states in the region between 
+  
+    
+      
+        p
+        ,
+        p
+        +
+        d
+        p
+        ,
+        
+          p
+          
+            2
+          
+        
+        =
+        
+          
+            
+              p
+            
+          
+          
+            2
+          
+        
+        ,
+      
+    
+    {\displaystyle p,p+dp,p^{2}={\bf {p}}^{2},}
+  
+ is then found to be the above expression 
+  
+    
+      
+        V
+        4
+        π
+        
+          p
+          
+            2
+          
+        
+        d
+        p
+        
+          /
+        
+        
+          h
+          
+            3
+          
+        
+      
+    
+    {\displaystyle V4\pi p^{2}dp/h^{3}}
+  
+ by considering the area covered by these points. 
+Moreover, in view of the uncertainty relation, which in 1 spatial dimension is
+
+  
+    
+      
+        Δ
+        q
+        Δ
+        p
+        ≥
+        h
+        ,
+      
+    
+    {\displaystyle \Delta q\Delta p\geq h,}
+  
+
+these states are indistinguishable (i.e., these states do not carry labels). An important consequence is a result known as Liouville's theorem, i.e., the time independence of this phase space volume element and thus of the a priori probability. A time dependence of this quantity would imply known information about the dynamics of the system, and hence would not be an a priori probability. Thus the region
+
+  
+    
+      
+        Ω
+        :=
+        
+          
+            
+              Δ
+              q
+              Δ
+              p
+            
+            
+              ∫
+              Δ
+              q
+              Δ
+              p
+            
+          
+        
+        ,
+        
+        
+        
+        ∫
+        Δ
+        q
+        Δ
+        p
+        =
+        
+          c
+          o
+          n
+          s
+          t
+          .
+        
+        ,
+      
+    
+    {\displaystyle \Omega :={\frac {\Delta q\Delta p}{\int \Delta q\Delta p}},\;\;\;\int \Delta q\Delta p=\mathrm {const.} ,}
+  
+
+when differentiated with respect to time 
+  
+    
+      
+        t
+      
+    
+    {\displaystyle t}
+  
+ yields zero (with the help of Hamilton's equations): The volume at time 
+  
+    
+      
+        t
+      
+    
+    {\displaystyle t}
+  
+ is the same as at time zero. One describes this also as conservation of information. 
+In the full quantum theory one has an analogous conservation law. In this case, the phase space region is replaced by a subspace of the space of states expressed in terms of a projection operator 
+  
+    
+      
+        P
+      
+    
+    {\displaystyle P}
+  
+, and instead of the probability in phase space, one has the probability density
+
+  
+    
+      
+        Σ
+        :=
+        
+          
+            P
+            
+              
+                Tr
+              
+              (
+              P
+              )
+            
+          
+        
+        ,
+        
+        
+        
+        N
+        =
+        
+          Tr
+        
+        (
+        P
+        )
+        =
+        
+          c
+          o
+          n
+          s
+          t
+          .
+        
+        ,
+      
+    
+    {\displaystyle \Sigma :={\frac {P}{{\text{Tr}}(P)}},\;\;\;N={\text{Tr}}(P)=\mathrm {const.} ,}
+  
+
+where 
+  
+    
+      
+        N
+      
+    
+    {\displaystyle N}
+  
+ is the dimensionality of the subspace. The conservation law in this case is expressed by the unitarity of the S-matrix. In either case, the considerations assume a closed isolated system. This closed isolated system is a system with (1) a fixed energy 
+  
+    
+      
+        E
+      
+    
+    {\displaystyle E}
+  
+ and (2) a fixed number of particles 
+  
+    
+      
+        N
+      
+    
+    {\displaystyle N}
+  
+ in (c) a state of equilibrium. If one considers a huge number of replicas of this system, one obtains what is called a microcanonical ensemble. It is for this system that one postulates in quantum statistics the "fundamental postulate of equal a priori probabilities of an isolated system." This says that the isolated system in equilibrium occupies each of its accessible states with the same probability. This fundamental postulate therefore allows us to equate the a priori probability to the degeneracy of a system, i.e., to the number of different states with the same energy.
+
+
+=== Example ===
+The following example illustrates the a priori probability (or a priori weighting) in (a) classical and (b) quantal contexts.
+
+
+=== Priori probability and distribution functions ===
+In statistical mechanics, it is common to derive so-called distribution functions 
+  
+    
+      
+        f
+      
+    
+    {\displaystyle f}
+  
+ for various statistics. In the case of Fermi–Dirac statistics and Bose–Einstein statistics, these functions are 
+respectively
+
+  
+    
+      
+        
+          f
+          
+            i
+          
+          
+            F
+            D
+          
+        
+        =
+        
+          
+            1
+            
+              
+                e
+                
+                  (
+                  
+                    ϵ
+                    
+                      i
+                    
+                  
+                  −
+                  
+                    ϵ
+                    
+                      0
+                    
+                  
+                  )
+                  
+                    /
+                  
+                  k
+                  T
+                
+              
+              +
+              1
+            
+          
+        
+        ,
+        
+        
+          f
+          
+            i
+          
+          
+            B
+            E
+          
+        
+        =
+        
+          
+            1
+            
+              
+                e
+                
+                  (
+                  
+                    ϵ
+                    
+                      i
+                    
+                  
+                  −
+                  
+                    ϵ
+                    
+                      0
+                    
+                  
+                  )
+                  
+                    /
+                  
+                  k
+                  T
+                
+              
+              −
+              1
+            
+          
+        
+        .
+      
+    
+    {\displaystyle f_{i}^{FD}={\frac {1}{e^{(\epsilon _{i}-\epsilon _{0})/kT}+1}},\quad f_{i}^{BE}={\frac {1}{e^{(\epsilon _{i}-\epsilon _{0})/kT}-1}}.}
+  
+
+These functions are derived for (1) a system in dynamic equilibrium (i.e., under steady, uniform conditions) with (2) total (and huge) number of particles 
+  
+    
+      
+        N
+        =
+        
+          Σ
+          
+            i
+          
+        
+        
+          n
+          
+            i
+          
+        
+      
+    
+    {\displaystyle N=\Sigma _{i}n_{i}}
+  
+ (this condition determines the constant 
+  
+    
+      
+        
+          ϵ
+          
+            0
+          
+        
+      
+    
+    {\displaystyle \epsilon _{0}}
+  
+), and (3) total energy 
+  
+    
+      
+        E
+        =
+        
+          Σ
+          
+            i
+          
+        
+        
+          n
+          
+            i
+          
+        
+        
+          ϵ
+          
+            i
+          
+        
+      
+    
+    {\displaystyle E=\Sigma _{i}n_{i}\epsilon _{i}}
+  
+, i.e., with each of the 
+  
+    
+      
+        
+          n
+          
+            i
+          
+        
+      
+    
+    {\displaystyle n_{i}}
+  
+ particles having the energy 
+  
+    
+      
+        
+          ϵ
+          
+            i
+          
+        
+      
+    
+    {\displaystyle \epsilon _{i}}
+  
+. An important aspect in the derivation is the taking into account of the indistinguishability of particles and states in quantum statistics, i.e., there particles and states do not have labels. In the case of fermions, like electrons, obeying the Pauli principle (only one particle per state or none allowed), one has therefore
+
+  
+    
+      
+        0
+        ≤
+        
+          f
+          
+            i
+          
+          
+            F
+            D
+          
+        
+        ≤
+        1
+        ,
+        
+        
+          whereas
+        
+        
+        0
+        ≤
+        
+          f
+          
+            i
+          
+          
+            B
+            E
+          
+        
+        ≤
+        ∞
+        .
+      
+    
+    {\displaystyle 0\leq f_{i}^{FD}\leq 1,\quad {\text{whereas}}\quad 0\leq f_{i}^{BE}\leq \infty .}
+  
+
+Thus 
+  
+    
+      
+        
+          f
+          
+            i
+          
+          
+            F
+            D
+          
+        
+      
+    
+    {\displaystyle f_{i}^{FD}}
+  
+ is a measure of the fraction of states actually occupied by electrons at energy 
+  
+    
+      
+        
+          ϵ
+          
+            i
+          
+        
+      
+    
+    {\displaystyle \epsilon _{i}}
+  
+ and temperature 
+  
+    
+      
+        T
+      
+    
+    {\displaystyle T}
+  
+. On the other hand, the a priori probability 
+  
+    
+      
+        
+          g
+          
+            i
+          
+        
+      
+    
+    {\displaystyle g_{i}}
+  
+ is a measure of the number of wave mechanical states available. Hence
+
+  
+    
+      
+        
+          n
+          
+            i
+          
+        
+        =
+        
+          f
+          
+            i
+          
+        
+        
+          g
+          
+            i
+          
+        
+        .
+      
+    
+    {\displaystyle n_{i}=f_{i}g_{i}.}
+  
+
+Since 
+  
+    
+      
+        
+          n
+          
+            i
+          
+        
+      
+    
+    {\displaystyle n_{i}}
+  
+ is constant under uniform conditions (as many particles as flow out of a volume element also flow in steadily, so that the situation in the element appears static), i.e., independent of time 
+  
+    
+      
+        t
+      
+    
+    {\displaystyle t}
+  
+, and 
+  
+    
+      
+        
+          g
+          
+            i
+          
+        
+      
+    
+    {\displaystyle g_{i}}
+  
+ is also independent of time 
+  
+    
+      
+        t
+      
+    
+    {\displaystyle t}
+  
+ as shown earlier, we obtain
+
+  
+    
+      
+        
+          
+            
+              d
+              
+                f
+                
+                  i
+                
+              
+            
+            
+              d
+              t
+            
+          
+        
+        =
+        0
+        ,
+        
+        
+          f
+          
+            i
+          
+        
+        =
+        
+          f
+          
+            i
+          
+        
+        (
+        t
+        ,
+        
+          
+            
+              v
+            
+          
+          
+            i
+          
+        
+        ,
+        
+          
+            
+              r
+            
+          
+          
+            i
+          
+        
+        )
+        .
+      
+    
+    {\displaystyle {\frac {df_{i}}{dt}}=0,\quad f_{i}=f_{i}(t,{\bf {v}}_{i},{\bf {r}}_{i}).}
+  
+
+Expressing this equation in terms of its partial derivatives, one obtains the Boltzmann transport equation. Above no mention was made of electric or other fields. Thus with no such fields present we have the Fermi-Dirac distribution as above. But with such fields present we have this additional dependence of 
+  
+    
+      
+        f
+      
+    
+    {\displaystyle f}
+  
+.
+
+
+== See also ==
+Base rate
+Base rate fallacy
+Bayesian epistemology
+Strong prior
+
+
+== Notes ==
+
+
+== References ==
+Bauwens, Luc; Lubrano, Michel; Richard, Jean-François (1999). "Prior Densities for the Regression Model". Bayesian Inference in Dynamic Econometric Models. Oxford University Press. pp. 94–128. ISBN 0-19-877313-7.
+Rubin, Donald B.; Gelman, Andrew; John B. Carlin; Stern, Hal (2003). Bayesian Data Analysis (2nd ed.). Boca Raton: Chapman & Hall/CRC. ISBN 978-1-58488-388-3. MR 2027492.
+Berger, James O. (1985). Statistical decision theory and Bayesian analysis. Berlin: Springer-Verlag. ISBN 978-0-387-96098-2. MR 0804611.
+Berger, James O.; Strawderman, William E. (1996). "Choice of hierarchical priors: admissibility in estimation of normal means". Annals of Statistics. 24 (3): 931–951. doi:10.1214/aos/1032526950. MR 1401831. Zbl 0865.62004.
+Bernardo, Jose M. (1979). "Reference Posterior Distributions for Bayesian Inference". Journal of the Royal Statistical Society, Series B. 41 (2): 113–147. doi:10.1111/j.2517-6161.1979.tb01066.x. JSTOR 2985028. MR 0547240.
+James O. Berger; José M. Bernardo; Dongchu Sun (2009). "The formal definition of reference priors". Annals of Statistics. 37 (2): 905–938. arXiv:0904.0156. Bibcode:2009arXiv0904.0156B. doi:10.1214/07-AOS587. S2CID 3221355.
+Jaynes, Edwin T. (2003). Probability Theory: The Logic of Science. Cambridge University Press. ISBN 978-0-521-59271-0.
+Williamson, Jon (2010). "review of Bruno di Finetti. Philosophical Lectures on Probability" (PDF). Philosophia Mathematica. 18 (1): 130–135. doi:10.1093/philmat/nkp019. Archived from the original (PDF) on 2011-06-09. Retrieved 2010-07-02.
+
+
+== External links ==
+PriorDB a collaborative database of models and their priors

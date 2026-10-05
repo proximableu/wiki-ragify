@@ -143,23 +143,34 @@ class Crawler:
         """Crawl all seed pages (each + its direct links). Returns accepted titles."""
         total = len(start_titles)
         self.crawl_dir.mkdir(parents=True, exist_ok=True)
-        self._emit(stage="crawl", kind="info", message=f"[INFO] Starting crawl of {total} seed title(s)")
         accepted: List[str] = []
 
+        # Seed the progress bar at 0/total *before* processing any seed, so the
+        # banner opens at 0% instead of jumping straight to 100% on the first tick.
+        self._emit(
+            stage="crawl",
+            kind="tick",
+            index=0,
+            total=total,
+            message=f"[INFO] Starting crawl of {total} seed title(s)",
+        )
+
         for i, title in enumerate(start_titles, 1):
-            self._emit(
-                stage="crawl",
-                kind="tick",
-                index=i,
-                total=total,
-                message=f"=== {i}/{total}: {title} ===",
-            )
             ok, _ = self._process_single(title, gating_prompt)
             _, linked = self._process_linked(title, gating_prompt)
             if ok:
                 accepted.append(title)
             accepted.extend(linked)
             self.cache.save(self.cache_file)
+            # Advance the bar *after* the seed (and its links) are processed, so the
+            # index tracks how many of the total seeds have completed.
+            self._emit(
+                stage="crawl",
+                kind="tick",
+                index=i,
+                total=total,
+                message=f"=== {i}/{total}: {title} processed ===",
+            )
 
         accepted_list = self.config.output_dir / self.config.output_dirname / "accepted_pages.list"
         accepted_list.parent.mkdir(parents=True, exist_ok=True)
