@@ -206,6 +206,17 @@ Screen {
     align-horizontal: center;
 }
 
+#config-screen #target-topic,
+#config-screen #exclude-topic {
+    width: 20;
+}
+
+#config-screen #generate-prompt {
+    margin: 0 0 1 0;
+    background: #2f9e44;
+    color: #ffffff;
+}
+
 #config-screen #confirm {
     background: #2f9e44;
     color: #ffffff;

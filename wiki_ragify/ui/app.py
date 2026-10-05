@@ -31,7 +31,7 @@ from textual.containers import Container
 from textual.message import Message
 from textual.widgets import Button, DataTable, Header, Input, Static
 
-from ..config import Config, PipelineConfig
+from ..config import Config, PipelineConfig, db_titlepath
 from ..pipeline.checkpoint import State
 from ..pipeline.runner import PipelineRunner
 from ..pipeline.events import ProgressEvent, StatEvent
@@ -53,6 +53,16 @@ class ConfigResult(Message):
         self.output_dir = Path(output_dir)
 
 
+class PromptGenerated(Message):
+    """Result posted back from the generate-prompt worker onto the config modal."""
+
+    def __init__(self, path: Path, ok: bool, message: str) -> None:
+        super().__init__()
+        self.path = path
+        self.ok = ok
+        self.message = message
+
+
 class ConfigCancelled(Message):
     """Posted when the config modal is dismissed without confirmation (Esc / Cancel)."""
 
@@ -70,11 +80,18 @@ class ConfigScreen(Screen):
     an inline warning and does not submit).
     """
 
-    def __init__(self, start_page: str = "", prompt_path: str = "", output_root: str = "") -> None:
+    def __init__(
+        self,
+        start_page: str = "",
+        prompt_path: str = "",
+        output_root: str = "",
+        config: Optional["Config"] = None,
+    ) -> None:
         super().__init__(id="config-screen")
         self._start_page = start_page
         self._prompt_path = prompt_path
         self._output_root = Path(output_root)
+        self._config = config or Config()
 
     def compose(self) -> ComposeResult:
         yield Static("Configure run", id="config-title")
@@ -89,6 +106,11 @@ class ConfigScreen(Screen):
         yield Static("Output directory (where this project's data lives):")
         yield Input(value=str(self._output_root), id="output-dir")
         yield Static("", id="output-warning")
+        yield Static("Target topic (used to generate a gating prompt):")
+        yield Input(id="target-topic", placeholder="e.g. autism acceptance")
+        yield Static("Explicitly exclude:")
+        yield Input(id="exclude-topic", placeholder="e.g. violence, code")
+        yield Button("Generate", id="generate-prompt")
         yield Container(Button("Confirm", id="confirm"), Button("Cancel", id="cancel"), id="config-actions")
 
     async def on_mount(self) -> None:  # pragma: no cover - Textual lifecycle
@@ -105,6 +127,72 @@ class ConfigScreen(Screen):
         elif button_id == "cancel":
             self.post_message(ConfigCancelled())
             self.app.pop_screen()
+        elif button_id == "generate-prompt":
+            self._on_generate_pressed()
+
+    def _on_generate_pressed(self) -> None:  # pragma: no cover - needs live Ollama
+        """Generate a gating prompt from the topic/exclude fields and write it to disk.
+
+        Runs on a worker thread (network I/O to the gate model); the result is posted
+        back onto this modal, where the notification is updated and the prompt-path
+        field is prefilled when it was left empty. An empty target topic is a no-op
+        with an inline warning.
+        """
+        topic = self.query_one("#target-topic", Input).value.strip()
+        exclude = self.query_one("#exclude-topic", Input).value.strip()
+        warn = self.query_one("#output-warning", Static)
+        if not topic:
+            warn.update("⚠  Target topic is required to generate a prompt")
+            return
+
+        def _generate_in_worker() -> None:
+            from ..gating import prompt_gen
+
+            output_dir = Path(self.query_one("#output-dir", Input).value.strip()).expanduser()
+            dest = self._resolve_destination(
+                self.query_one("#prompt-path", Input).value.strip(), output_dir
+            )
+            try:
+                text = prompt_gen.generate_gating_prompt(
+                    prompt_gen.DEFAULT_TEMPLATE, topic, exclude, config=self._config
+                )
+                if not text.strip():
+                    warn.update("✗  Generation produced no prompt")
+                    self.post_message(
+                        PromptGenerated(dest, ok=False, message="Generation produced no prompt")
+                    )
+                    return
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                dest.write_text(text, encoding="utf-8")
+            except Exception as exc:  # pragma: no cover - live only
+                self.post_message(PromptGenerated(dest, ok=False, message=f"Generation failed: {exc}"))
+                return
+            self.post_message(PromptGenerated(dest, ok=True, message=f"Prompt saved to {dest}"))
+
+        self.app.run_worker(_generate_in_worker, thread=True, exclusive=True)
+
+    def on_prompt_generated(self, message: PromptGenerated) -> None:  # pragma: no cover
+        """Main-thread handler: notify the user and (if the field was empty) prefill it."""
+        warn = self.query_one("#output-warning", Static)
+        if message.ok:
+            warn.update(f"✓  {message.message}")
+            prompt_field = self.query_one("#prompt-path", Input)
+            if not prompt_field.value.strip():
+                prompt_field.value = str(message.path)
+        else:
+            warn.update(f"✗  {message.message}")
+
+    def _resolve_destination(self, prompt_path: str, output_dir: Path) -> Path:
+        """Where to write a generated prompt.
+
+        If the Gating prompt path field is set, write there (overwriting).
+        Otherwise fall back to ``<output-dir>/prompts/<topic-slug>.txt`` and let the
+        caller prefill that field so the user can confirm the file exists.
+        """
+        if prompt_path.strip():
+            return Path(prompt_path).expanduser()
+        stem = db_titlepath(self.query_one("#target-topic", Input).value.strip() or "gate").removesuffix(".db")
+        return output_dir / "prompts" / f"{stem}.txt"
 
     def _submit(self) -> None:  # pragma: no cover - Textual modal
         start_page = self.query_one("#start-page", Input).value.strip()
@@ -353,6 +441,7 @@ class WikiRagifyApp(App):
                     start_page=self._config_start_page or "",
                     prompt_path=self._config_prompt_path or "",
                     output_root=str(self.root),
+                    config=self.config,
                 ),
                 callback=self._on_config_result,
             )
