@@ -1,8 +1,10 @@
 /* Wiki Ragify TUI — layout + palette for the full-screen multi-screen app.
  *
- * Three regions: the left folder picker (FR-1), the central progress window
- * (FR-3), and the right stats panel (FR-4). A footer carries the query box (FR-8)
- * and the run controls (CONFIG | RUN | PAUSE | RESUME | STOP | QUIT, §6/§7).
+ * Three regions: the central progress window (FR-3), the rolling stats panel
+ * (FR-4), and a footer carrying the query box (FR-8) and the run controls
+ * (CONFIG | RUN | PAUSE | RESUME | STOP | QUIT, §6/§7). The project/folder picker
+ * moved to the CONFIG modal (Textual 8.2.8 has no file-browser widget), so #main
+ * holds only the progress window and stats panel.
  *
  * NOTE: literal color values are used (not Textual custom variables). Textual
  * 8.2.8 cannot parse a stylesheet that references an undefined variable, so any
@@ -56,12 +58,6 @@ Screen {
 #main {
     layout: horizontal;
     height: 1fr;
-}
-
-#folder-tree {
-    width: 30%;
-    border-right: round #3a3a3a;
-    background: #232323;
 }
 
 #progress-panel {
